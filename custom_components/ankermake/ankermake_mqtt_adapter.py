@@ -98,7 +98,7 @@ ERROR_CODES = {
 class AnkerData:
     _last_heartbeat: datetime = datetime.now()
     _status: AnkerStatus = AnkerStatus.OFFLINE
-    _old_status: AnkerStatus = AnkerStatus.OFFLINE
+    _old_status: AnkerStatus = None
     _old_job_name: str = ""
     job_name: str = ""
     image: str = ""
@@ -109,7 +109,7 @@ class AnkerData:
     error_level: str = ""
     error_ext: str = ""
 
-    progress: int = 0
+    progress: float = 0
     elapsed_time: int = 0
     remaining_time: int = 0
     total_time: int = 0
@@ -166,6 +166,7 @@ class AnkerData:
 
         if new_status in RESET_STATES:
             self._reset()
+
         self._old_status = new_status
 
     @property
