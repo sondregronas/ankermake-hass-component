@@ -14,7 +14,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class AnkerMakeImageSensor(AnkerMakeBaseEntity, ImageEntity):
-
     def __init__(self, coordinator, description, dev_info, hass: HomeAssistant):
         super().__init__(coordinator, description, dev_info)
         self._gcode_preview_url = ''

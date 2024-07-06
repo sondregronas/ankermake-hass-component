@@ -24,10 +24,13 @@ There are probably many issues to list...
 
 - There's probably an easier way to not poll the mqtt socket (requesting from the printer, right now it just listens on
   a separate thread)
+- The state will be forgotten if home assistant restarts
+- Config flow will not verify the connection to the ankerctl instance (it will just assume it's correct)
 - The integration does not respect the home assistant timezone (but it does for the system timezone)
 - No camera support (but can be worked around using go2rtc, though PPPP crashes a lot - stable when it doesn't crash!)
 - There are no ways to pause/stop a print
 - There are no unit tests :(
+- Logging is pretty much non-existent, documentation is lacking
 
 ## Testing
 

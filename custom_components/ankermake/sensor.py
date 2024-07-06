@@ -1,3 +1,8 @@
+"""
+AnkerMake sensor platform for Home Assistant. Sensors are generated via sensor_manifest.py and are updated via the
+_update_from_anker method.
+"""
+
 import logging
 from datetime import timedelta
 

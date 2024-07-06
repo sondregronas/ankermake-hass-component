@@ -1,3 +1,9 @@
+"""
+AnkerMake Config Flow
+- host: str (will be ws(s)://<host>)
+- printer_name: str (the device name)
+"""
+
 import re
 
 import voluptuous as vol
@@ -16,9 +22,6 @@ class AnkerMakeFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Config flow for AnkerMake."""
     VERSION = 1
 
-    def __init__(self):
-        self.host = None
-
     async def async_step_user(self, user_input: ConfigType = None):
         # If the user input is empty, show the form
         if not user_input:
@@ -32,8 +35,11 @@ class AnkerMakeFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         # Ensure there is no trailing slashes or paths
         host = re.search(r'(wss?://[^/]+)', host).group(1)
 
+        # Update the user input
+        user_input["host"] = host
+
         # Ensure host is unique
-        unique_id = user_input["host"]
+        unique_id = user_input["printer_name"]
         await self.async_set_unique_id(unique_id)
         self._abort_if_unique_id_configured()
 

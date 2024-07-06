@@ -1,3 +1,7 @@
+"""
+A simple utility module to control the light and video quality settings on the AnkerMake printer via ankerctls mqtt websocket.
+"""
+
 import json
 from enum import Enum
 

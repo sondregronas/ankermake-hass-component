@@ -11,6 +11,7 @@ class Description(SensorEntityDescription):
         super().__init__(*args, **kwargs)
 
 
+# Key must match the attribute in the AnkerData class
 BINARY_SENSOR_DESCRIPTIONS = [
     # AI Enabled
     Description(
@@ -22,6 +23,7 @@ BINARY_SENSOR_DESCRIPTIONS = [
     ),
 ]
 
+# Key must match the attribute in the AnkerData class
 SENSOR_DESCRIPTIONS = [
     # Job Name
     Description(
@@ -100,6 +102,10 @@ SENSOR_DESCRIPTIONS = [
     ),
 ]
 
+# Description Key = entity affix
+# Dict = {entity_attribute: key_in_ankerdata} (state sets the entity state)
+# If one does not intend to use an ankerdata attribute an if statement must be added to the _update_from_anker method
+# in sensor.py to prevent an AttributeError (alternatively see _filter_handler method in sensor.py)
 SENSOR_WITH_ATTR_DESCRIPTIONS = [
     # 3D Printer Sensor
     [Description(

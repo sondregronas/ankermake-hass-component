@@ -1,6 +1,17 @@
+"""
+AnkerMake MQTT Adapter
+This module is responsible for handling the MQTT messages from the AnkerMake printer and updating the AnkerData object.
+
+In other words, this module is the "brain" of the AnkerMake integration.
+"""
+
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
+
+from logging import getLogger
+
+_LOGGER = getLogger(__name__)
 
 
 class AnkerException(BaseException):
@@ -147,8 +158,8 @@ class AnkerData:
         status = AnkerStatus.PRINTING
 
         # Check if the printer is heating up
-        is_heating_hotend = self.target_hotend_temp - 5 > self.hotend_temp > 30 and not self.progress
-        is_heating_bed = self.target_bed_temp - 2 > self.bed_temp > 30 and not self.progress
+        is_heating_hotend = self.target_hotend_temp - 5 > self.hotend_temp > 30
+        is_heating_bed = self.target_bed_temp - 2 > self.bed_temp > 30
 
         if self._last_heartbeat < datetime.now() - timedelta(seconds=30):
             status = AnkerStatus.OFFLINE
@@ -219,4 +230,5 @@ class AnkerData:
             # If the command_type is not handled, raise an exception (unless we know it's not used)
             case _:
                 if command_type not in CommandTypes:
+                    _LOGGER.error(f"Unknown command_type: {command_type} ({websocket_message})")
                     raise AnkerUnhandledCommandException(f"Unknown command_type: {command_type} ({websocket_message})")

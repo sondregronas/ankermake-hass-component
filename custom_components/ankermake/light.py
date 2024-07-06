@@ -1,3 +1,8 @@
+"""
+There is only one light on the AnkerMake printer, so the light entity will be a simple on/off switch and
+is hardcoded in this file.
+"""
+
 import logging
 
 from homeassistant.components.light import LightEntity

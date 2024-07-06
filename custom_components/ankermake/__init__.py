@@ -1,3 +1,10 @@
+"""
+AnkerMake integration for Home Assistant.
+
+Responsible for setting up the update coordinator and forwarding the config entry to the platforms.
+There isn't much to do here, as the responsibility of setting up the entities is delegated to the platforms.
+"""
+
 from __future__ import annotations
 
 import asyncio

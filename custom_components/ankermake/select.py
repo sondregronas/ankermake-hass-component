@@ -1,3 +1,7 @@
+"""
+There is only one (hardcoded) select entity here, which is the video quality setting on the AnkerMake printers camera.
+"""
+
 import logging
 
 from homeassistant.components.select import SelectEntity
