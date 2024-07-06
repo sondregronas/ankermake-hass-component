@@ -15,11 +15,12 @@ class AnkerMakeBinarySensor(AnkerMakeBaseEntity, BinarySensorEntity):
     @callback
     def _update_from_anker(self) -> None:
         try:
+            self._attr_is_on = getattr(self.coordinator.ankerdata, self.entity_description.key)
+
             if self.coordinator.ankerdata.online:
                 self._attr_available = True
             else:
                 self._attr_available = False
-            self._attr_is_on = getattr(self.coordinator.ankerdata, self.entity_description.key)
         except AttributeError:
             self._attr_available = False
 
@@ -34,5 +35,5 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     for description in BINARY_SENSOR_DESCRIPTIONS:
         entities.append(AnkerMakeBinarySensor(coordinator, description, dev_info))
-        
+
     async_add_entities(entities, True)
