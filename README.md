@@ -23,6 +23,12 @@ page.
 
 > Note: You can add as many instances as you'd like (but you will need an ankerctl instance running for each one).
 
+## Dependencies
+
+For this component to work, you will need an instance of [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
+running and working. Please refer to the ankerctl documentation for installation instructions. (They do have a Home
+Assistant add-on in their organization, but I have not tested it with this component).
+
 ## Known issues
 
 There are probably many issues to list...
