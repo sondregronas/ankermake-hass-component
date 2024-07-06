@@ -15,20 +15,24 @@ class AnkerMakeBinarySensor(AnkerMakeBaseEntity, BinarySensorEntity):
     @callback
     def _update_from_anker(self) -> None:
         try:
-            self._attr_available = True
+            if self.coordinator.ankerdata.online:
+                self._attr_available = True
+            else:
+                self._attr_available = False
             self._attr_is_on = getattr(self.coordinator.ankerdata, self.entity_description.key)
-        except (KeyError, AttributeError):
-            _LOGGER.error(f"[AnkerMake] Sensor update failed")
+        except AttributeError:
             self._attr_available = False
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
+    dev_info = DeviceInfo(
+        manufacturer=MANUFACTURER,
+        identifiers={(DOMAIN, entry.entry_id)},
+        name=coordinator.config["printer_name"])
+
     for description in BINARY_SENSOR_DESCRIPTIONS:
-        dev_info = DeviceInfo(
-            manufacturer=MANUFACTURER,
-            identifiers={(DOMAIN, entry.entry_id)},
-            name=coordinator.config["printer_name"])
         entities.append(AnkerMakeBinarySensor(coordinator, description, dev_info))
+        
     async_add_entities(entities, True)

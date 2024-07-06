@@ -25,15 +25,12 @@ class AnkerMakeFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="user", data_schema=VOL_SCHEME)
 
         # Replace http(s) with ws(s)
-        host = user_input["host"].replace('http://', 'ws://')
-        host = host.replace('https://', 'wss://')
+        host = user_input["host"].replace('http://', 'ws://').replace('https://', 'wss://')
         # Ensure the host is in the correct format (ws:// or wss://)
         if not re.match(r"wss?://.+(:\d+)?", host):
             host = f"ws://{host}"
         # Ensure there is no trailing slashes or paths
         host = re.search(r'(wss?://[^/]+)', host).group(1)
-        # Update the host in the user input for easier setup later
-        user_input["host"] = f'{host}/ws/mqtt'
 
         # Ensure host is unique
         unique_id = user_input["host"]

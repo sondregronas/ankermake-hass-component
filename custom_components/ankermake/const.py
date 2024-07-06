@@ -1,5 +1,5 @@
 NAME = 'AnkerMake'
-VERSION = '0.1.0'
+VERSION = '0.2.0'
 ISSUEURL = 'https://github.com/sondregronas/ankermake-hass-component/issues'
 
 DOMAIN = 'ankermake'
@@ -14,3 +14,5 @@ If you have any issues with this you need to open an issue here:
 {ISSUEURL}
 -------------------------------------------------------------------
 """
+
+UPDATE_FREQUENCY_SECONDS = 5

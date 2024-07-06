@@ -14,11 +14,13 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 
 from .ankermake_mqtt_adapter import AnkerData, AnkerException
-from .const import DOMAIN, STARTUP
+from .const import DOMAIN, STARTUP, UPDATE_FREQUENCY_SECONDS
 
 PLATFORMS = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
+    Platform.LIGHT,
+    Platform.SELECT,
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,7 +56,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry):
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=5))
+        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=UPDATE_FREQUENCY_SECONDS))
 
         self.config = entry.data
         self.ankerdata = AnkerData()
@@ -70,15 +72,19 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
                 _LOGGER.error(f"[AnkerMake] Error updating data (Received message: {message})")
 
         session = aiohttp.ClientSession()
-        async with session.ws_connect(self.config['host']) as ws:
-            async for msg in ws:
-                if msg.type == aiohttp.WSMsgType.TEXT:
-                    on_message(json.loads(msg.data))
-                elif msg.type == aiohttp.WSMsgType.CLOSED:
-                    break
-                elif msg.type == aiohttp.WSMsgType.ERROR:
-                    break
-        await session.close()
+        try:
+            async with session.ws_connect(f"{self.config['host']}/ws/mqtt") as ws:
+                async for msg in ws:
+                    if msg.type == aiohttp.WSMsgType.TEXT:
+                        on_message(json.loads(msg.data))
+                    elif msg.type == aiohttp.WSMsgType.CLOSED:
+                        break
+                    elif msg.type == aiohttp.WSMsgType.ERROR:
+                        break
+        except Exception as e:
+            _LOGGER.debug(f"[AnkerMake] Error connecting to WS: {e}")
+        finally:
+            await session.close()
 
     async def _async_update_data(self):
         # Ensure task is still running

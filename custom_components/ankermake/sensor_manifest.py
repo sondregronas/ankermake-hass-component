@@ -1,5 +1,4 @@
 from homeassistant import const
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorEntityDescription
 
 
@@ -9,24 +8,26 @@ class Description(SensorEntityDescription):
         super().__init__(*args, **kwargs)
 
 
-BINARY_SENSOR_DESCRIPTIONS = [
-    # Printing
-    Description(
-        key="printing",
-        name="Printing",
-        icon="mdi:printer-3d",
-        device_class=BinarySensorDeviceClass.RUNNING,
-    ),
+BINARY_SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTIONS
+"""[
     # AI Enabled
     Description(
         key="ai_enabled",
-        name="AI Detection",
+        name="AI Detection Enabled",
         icon="mdi:brain",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,
     ),
-]
+]"""
 
-SENSOR_DESCRIPTIONS = [
+SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTIONS
+"""[
+    # Status
+    Description(
+        key="status",
+        name="Status",
+        icon="mdi:printer-3d",
+    ),
     # Job Name
     Description(
         key="job_name",
@@ -110,7 +111,7 @@ SENSOR_DESCRIPTIONS = [
     # Bed Temp
     Description(
         key="bed_temp",
-        name="Bed Temperture",
+        name="Bed Temperature",
         icon="mdi:thermometer",
         native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
     ),
@@ -121,4 +122,66 @@ SENSOR_DESCRIPTIONS = [
         icon="mdi:thermometer",
         native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
     ),
+]"""
+
+SENSOR_WITH_ATTR_DESCRIPTIONS = [
+    # 3D Printer Sensor
+    [Description(
+        key="3d_printer",
+        name="3D Printer",
+        icon="mdi:printer-3d",
+    ),
+        {
+            'state': 'status',
+            'ai_enabled': 'ai_enabled',
+            'possible_states': 'possible_states',
+        }
+    ],
+    # Hotend Sensor
+    [Description(
+        key="hotend",
+        name="Hotend",
+        icon="mdi:thermometer",
+        native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
+    ),
+        {
+            'state': 'hotend_temp',
+            'target_temp': 'target_hotend_temp',
+        }
+    ],
+    # Bed Sensor
+    [Description(
+        key="bed",
+        name="Bed",
+        icon="mdi:thermometer",
+        native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
+    ),
+        {
+            'state': 'bed_temp',
+            'target_temp': 'target_bed_temp',
+        }
+    ],
+    # Print job
+    [Description(
+        key="print_job",
+        name="Print Job",
+        icon="mdi:file-document",
+        native_unit_of_measurement=const.PERCENTAGE,
+    ),
+        {
+            'state': 'progress',
+            'gcode_preview_url': 'image',
+            'job_name': 'job_name',
+            'elapsed_time': '%%TD=elapsed_time',
+            'remaining_time': '%%TD=remaining_time',
+            'total_print_time': '%%TD=total_time',
+            'filament_used': 'filament_used',
+            'start_time': 'print_start_time',
+            'estimated_finish_time': 'print_est_finish_time',
+            'filament_unit': 'filament_unit',
+            'current_speed': 'current_speed',
+            'current_layer': 'current_layer',
+            'total_layers': 'total_layers',
+        }
+    ]
 ]

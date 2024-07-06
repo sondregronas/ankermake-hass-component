@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from enum import Enum
 
 
@@ -58,17 +59,31 @@ class CommandTypes(Enum):
     ZZ_MQTT_CMD_ALEXA_MSG = 3000  # Not used
 
 
+class AnkerStatus(Enum):
+    IDLE = "Idle"
+    PRINTING = "Printing"
+    PAUSED = "Paused"
+    ERROR = "Error"  # Not used (unsure how to tell if there's an error)
+    OFFLINE = "Offline"
+    PREHEATING = "Preheating"
+
+
 @dataclass
 class AnkerData:
-    printing: bool = False
+    last_heartbeat: datetime = datetime.now()
+    _status: AnkerStatus = AnkerStatus.OFFLINE
 
-    job_name: str = "Unknown"
+    _old_job_name: str = ""
+    job_name: str = ""
     image: str = ""
 
     progress: int = 0
     elapsed_time: int = 0
     remaining_time: int = 0
     total_time: int = 0
+
+    print_start_time: datetime = None
+    print_est_finish_time: datetime = None
 
     ai_enabled: bool = False
 
@@ -85,13 +100,54 @@ class AnkerData:
     bed_temp: float = 0
     target_bed_temp: float = 0
 
+    def _pulse(self):
+        self.last_heartbeat = datetime.now()
+
+    @property
+    def online(self) -> bool:
+        return self.status != AnkerStatus.OFFLINE.value
+
+    @property
+    def printing(self) -> bool:
+        return self.job_name != ""
+
+    @property
+    def status(self) -> str:
+        # TODO: Add "error" state
+
+        # Check if the printer is heating up
+        is_heating_hotend = self.target_hotend_temp - 5 > self.hotend_temp > 30 and not self.progress
+        is_heating_bed = self.target_bed_temp - 2 > self.bed_temp > 30 and not self.progress
+
+        if self.last_heartbeat < datetime.now() - timedelta(seconds=30):
+            return AnkerStatus.OFFLINE.value
+        if not self.current_speed and self.printing:
+            return AnkerStatus.PAUSED.value
+        if not self.current_speed and (is_heating_hotend or is_heating_bed):
+            return AnkerStatus.PREHEATING.value
+        if not self.current_speed:  # Unsure if this is the correct condition
+            return AnkerStatus.IDLE.value
+        else:
+            return AnkerStatus.PRINTING.value
+
+    @property
+    def possible_states(self) -> list:
+        return [state.value for state in AnkerStatus]
+
+    def _new_print_job(self):
+        self.print_start_time = datetime.now() - timedelta(seconds=self.elapsed_time)
+        self.print_est_finish_time = self.print_start_time + timedelta(seconds=self.total_time)
+
+    def _new_job_handler(self):
+        if self.job_name != self._old_job_name:
+            self._new_print_job()
+
     def update(self, websocket_message: dict):
         command_type = websocket_message.get("commandType")
         match command_type:
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
                 # Update the status
                 self.job_name = websocket_message.get("name")
-                self.printing = self.job_name != ""
                 self.image = websocket_message.get("img")
 
                 self.progress = websocket_message.get("progress") / 100
@@ -105,17 +161,22 @@ class AnkerData:
 
                 self.filament_used = websocket_message.get("filamentUsed")
                 self.filament_unit = websocket_message.get("filamentUnit")
+
+                # Register new print job (only on this event)
+                self._new_job_handler()
+                self._old_job_name = self.job_name
             case CommandTypes.ZZ_MQTT_CMD_MODEL_LAYER.value:
                 self.current_layer = websocket_message.get("real_print_layer")
                 self.total_layers = websocket_message.get("total_layer")
             case CommandTypes.ZZ_MQTT_CMD_NOZZLE_TEMP.value:
+                self._pulse()
                 self.hotend_temp = websocket_message.get("currentTemp") / 100
                 self.target_hotend_temp = websocket_message.get("targetTemp") / 100
             case CommandTypes.ZZ_MQTT_CMD_HOTBED_TEMP.value:
                 self.bed_temp = websocket_message.get("currentTemp") / 100
                 self.target_bed_temp = websocket_message.get("targetTemp") / 100
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SPEED.value:
-                self.current_speed = websocket_message.get("speed")
+                self.current_speed = websocket_message.get("value")
 
             # If the command_type is not handled, raise an exception (unless we know it's not used)
             case _:

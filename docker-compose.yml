@@ -6,5 +6,7 @@ services:
       - ./test:/config
       - ./custom_components:/config/custom_components
     restart: unless-stopped
+    environment:
+      - TZ=Europe/Oslo
     ports:
       - "8123:8123"
