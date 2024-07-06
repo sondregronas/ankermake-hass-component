@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "AnkerMake Setup",
+        "description": "Requires ankerctl (https://github.com/Ankermgmt/ankermake-m5-protocol)",
+        "data": {
+          "host": "Your ankerctl host",
+          "printer_name": "Your printers name"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "The specified host is already configured"
+    }
+  }
+}

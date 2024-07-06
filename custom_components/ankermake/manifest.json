@@ -1,0 +1,12 @@
+{
+  "domain": "ankermake",
+  "name": "AnkerMake",
+  "documentation": "",
+  "dependencies": [],
+  "config_flow": true,
+  "codeowners": [
+    "sondregronas"
+  ],
+  "requirements": [],
+  "version": "0.1.0"
+}
