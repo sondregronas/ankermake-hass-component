@@ -16,7 +16,6 @@ class AnkerMakeSensor(AnkerMakeBaseEntity, SensorEntity):
     @callback
     def _update_from_anker(self) -> None:
         try:
-            # TODO: Add multiple attributes to allow for consolidation of sensors
             value = getattr(self.coordinator.ankerdata, self.entity_description.key)
             if self.coordinator.ankerdata.online:
                 self._attr_available = True
@@ -69,7 +68,6 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    # TODO: Consolidate sensor (i.e. Hot End Temperature includes both current and target)
     coordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
     dev_info = DeviceInfo(
