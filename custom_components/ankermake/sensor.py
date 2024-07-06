@@ -48,12 +48,6 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
     @callback
     def _update_from_anker(self) -> None:
         try:
-            if self.coordinator.ankerdata.online:
-                self._attr_available = True
-            else:
-                self._attr_available = False
-                return
-
             state = getattr(self.coordinator.ankerdata, self.attrs['state'])
             self._attr_native_value = state
 
@@ -62,6 +56,10 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
                     continue
                 self._attr_extra_state_attributes[attr] = self._filter_handler(key)
 
+            if not self.coordinator.ankerdata.online:
+                self._attr_available = True
+            else:
+                self._attr_available = False
         except (AttributeError, KeyError) as e:
             _LOGGER.error(f"Failed to update {e}")
             self._attr_available = False

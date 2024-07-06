@@ -1,9 +1,11 @@
 # AnkerMake Home Assistant Component
 
-<img src=".github/media/device_view.png" width="40%"><img src=".github/media/states_view.png" width="50%">
+<img src=".github/media/device_view.png" width="70%">
 
-This component actively listens to the mqtt socket of a
-running [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol) instance
+Ever wanted a quick way to check the status of your AnkerMake M5 3D printer? This Home Assistant component allows you to
+do just that! It listens to the mqtt socket of
+an [ankerctl instance](https://github.com/Ankermgmt/ankermake-m5-protocol)
+and updates the status of your printer in real-time.
 
 ## Installation
 

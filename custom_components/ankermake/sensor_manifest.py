@@ -2,6 +2,8 @@ from homeassistant import const
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorEntityDescription
 
+from custom_components.ankermake.ankermake_mqtt_adapter import AnkerStatus
+
 
 class Description(SensorEntityDescription):
     def __init__(self, *args, **kwargs):
@@ -58,6 +60,14 @@ SENSOR_DESCRIPTIONS = [
         native_unit_of_measurement="mm/s",
         entity_registry_enabled_default=False,
     ),
+    # Max Speed
+    Description(
+        key="max_speed",
+        name="Max Speed",
+        icon="mdi:speedometer",
+        native_unit_of_measurement="mm/s",
+        entity_registry_enabled_default=False,
+    ),
     # Current Layer
     Description(
         key="current_layer",
@@ -96,11 +106,12 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
         key="3d_printer",
         name="3D Printer",
         icon="mdi:printer-3d",
+        device_class='enum',
+        options=[s.value for s in AnkerStatus],
     ),
         {
             'state': 'status',
             'ai_enabled': 'ai_enabled',
-            'possible_states': 'possible_states',
         }
     ],
     # Hotend Sensor
@@ -112,6 +123,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
     ),
         {
             'state': 'hotend_temp',
+            'nozzle_type': 'nozzle_type',
             'target_temp': 'target_hotend_temp',
         }
     ],
@@ -125,6 +137,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
         {
             'state': 'bed_temp',
             'target_temp': 'target_bed_temp',
+            'bed_leveled': 'bed_leveled',
         }
     ],
     # Print job
@@ -146,6 +159,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'estimated_finish_time': 'print_est_finish_time',
             'filament_unit': 'filament_unit',
             'current_speed': 'current_speed',
+            'max_speed': 'max_speed',
             'current_layer': 'current_layer',
             'total_layers': 'total_layers',
         }

@@ -21,6 +21,7 @@ PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.LIGHT,
     Platform.SELECT,
+    Platform.IMAGE,
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -99,7 +100,6 @@ class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
         super().__init__(coordinator)
         self.coordinator = coordinator
 
-        # self._attr_name = ankerobject.name
         self._attr_name = f"{device_info['name']} {description.name}"
         self.entity_description = description
         self._attr_unique_id = description.key
