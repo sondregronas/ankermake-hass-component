@@ -68,7 +68,7 @@ class CommandTypes(Enum):
     UNKNOWN_1081 = 1081  # Not used
     UNKNOWN_1084 = 1084  # Not used
     TEMP_IS_LEVELED = 1072  # isLeveled: 1
-    TEMP_ERROR_CODE = 1085  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '{"curFilamentType":["PLA"]}', 'commandType': 1085}
+    TEMP_ERROR_CODE = 1085  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '{"curFilamentType":["PLA"]}'}
     TEMP_NOZZLE_TYPE = 1093  # value: 0, nozzle_type: 0
     ZZ_STEST_CMD_GCODE_TRANSPOR = 2018  # Not used
     ZZ_MQTT_CMD_ALEXA_MSG = 3000  # Not used
@@ -83,6 +83,29 @@ class AnkerStatus(Enum):
     PREHEATING = "Preheating"
     FINISHED = "Finished"
 
+
+# TODO: Split this into its own file / module
+class FilamentType(Enum):
+    NOT_IMPLEMENTED = "Not yet implemented"
+    # ...
+    PLA = "PLA"
+    ABS = "ABS"
+    PETG = "PETG"
+    Nylon = "Nylon"
+    TPU = "TPU"
+    # ... Add more filament types here
+    UNKNOWN = "Unknown"
+
+
+FILAMENT_WEIGHT_175 = {
+    # https://bitfab.io/blog/3d-printing-materials-densities/
+    FilamentType.PLA.value: 2.98,
+    FilamentType.ABS.value: 2.50,
+    FilamentType.PETG.value: 3.05,
+    FilamentType.Nylon.value: 3.65,
+    FilamentType.TPU.value: 2.91,
+    # ... Add more filament g/m here
+}
 
 RESET_STATES = [AnkerStatus.OFFLINE, AnkerStatus.IDLE]
 # TODO: Investigate if there are more nozzle types
@@ -125,9 +148,10 @@ class AnkerData:
     motor_locked: bool = False
     ai_enabled: bool = False
 
-    # filament: str = ""  # TODO: Currently no way of knowing what filament is used (unless deriving from job_name or an error)
+    # TODO: Currently no message for filament type except for error messages (afaik). Could derive from the filename.
+    filament: FilamentType = FilamentType.NOT_IMPLEMENTED.value
+
     filament_used: float = 0
-    filament_unit: str = "m"
 
     current_speed: int = 0
     max_speed: int = 500
@@ -155,6 +179,14 @@ class AnkerData:
     @property
     def printing(self) -> bool:
         return self.job_name != ""
+
+    @property
+    def filament_weight(self) -> float:
+        """Returns the weight of the filament used in grams."""
+        # PLA is the default filament type (if the filament type is unknown)
+        weight = float(FILAMENT_WEIGHT_175.get(self.filament,
+                                               FILAMENT_WEIGHT_175.get(FilamentType.PLA.value))) * self.filament_used
+        return weight
 
     def _new_status_handler(self, new_status: AnkerStatus):
         if new_status == self._old_status:
@@ -234,7 +266,7 @@ class AnkerData:
                 self.current_layer = websocket_message.get("real_print_layer")
                 self.total_layers = websocket_message.get("total_layer")
             case CommandTypes.ZZ_MQTT_CMD_NOZZLE_TEMP.value:
-                self._pulse()  # _pulse goes here since this is a reliable mqtt message that doesnt get spammed too much
+                self._pulse()  # _pulse goes here since this is a reliable mqtt message that doesn't get spammed too much
                 self.hotend_temp = websocket_message.get("currentTemp") / 100  # Divide by 100 to get the correct value
                 self.target_hotend_temp = websocket_message.get(
                     "targetTemp") / 100  # Divide by 100 to get the correct value

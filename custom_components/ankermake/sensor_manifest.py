@@ -2,7 +2,7 @@ from homeassistant import const
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorEntityDescription
 
-from custom_components.ankermake.ankermake_mqtt_adapter import AnkerStatus
+from .ankermake_mqtt_adapter import AnkerStatus, FilamentType
 
 
 # Linter is complaining without this class, it is strictly unnecessary
@@ -57,7 +57,15 @@ SENSOR_DESCRIPTIONS = [
         key="filament_used",
         name="Filament Used",
         icon="mdi:pipe",
-        native_unit_of_measurement="m",
+        native_unit_of_measurement=const.UnitOfLength.METERS,
+        entity_registry_enabled_default=False,
+    ),
+    # Filament Weight
+    Description(
+        key="filament_weight",
+        name="Filament Weight",
+        icon="mdi:weight",
+        native_unit_of_measurement=const.UnitOfMass.GRAMS,
         entity_registry_enabled_default=False,
     ),
     # Current Speed
@@ -177,14 +185,27 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'elapsed_time': '%%TD=elapsed_time',
             'remaining_time': '%%TD=remaining_time',
             'total_print_time': '%%TD=total_time',
-            'filament_used': 'filament_used',
             'start_time': 'print_start_time',
             'estimated_finish_time': 'print_est_finish_time',
-            'filament_unit': 'filament_unit',
             'current_speed': 'current_speed',
             'max_speed': 'max_speed',
             'current_layer': 'current_layer',
             'total_layers': 'total_layers',
+        }
+    ],
+    # Filament
+    # TODO: Move from print job to filament sensor
+    [Description(
+        key="filament",
+        name="Filament",
+        icon="mdi:pipe",
+        device_class='enum',
+        options=[s.value for s in FilamentType],
+    ),
+        {
+            'state': 'filament',
+            'filament_used': 'filament_used',
+            'filament_weight': 'filament_weight',
         }
     ],
     # Error Message

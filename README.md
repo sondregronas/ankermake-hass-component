@@ -33,6 +33,8 @@ Assistant add-on in their organization, but I have not tested it with this compo
 
 There are probably many issues to list...
 
+- Filament will ALWAYS be "Not Implemented" (I have no way of knowing what filament is loaded) - Might add a way to
+  manually set this in the future or derive it from the gcode name
 - There's probably an easier way to not poll the mqtt socket (requesting from the printer, right now it just listens on
   a separate thread)
 - The state will be forgotten if home assistant restarts
@@ -42,6 +44,7 @@ There are probably many issues to list...
 - There are no ways to pause/stop a print
 - There are no unit tests :(
 - Logging is pretty much non-existent, documentation is lacking
+- ankerctl can crash sometimes hindering the integration from working until it's restarted
 
 ## Testing
 
