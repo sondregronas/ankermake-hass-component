@@ -123,9 +123,9 @@ class AnkerData:
             return AnkerStatus.OFFLINE.value
         if not self.current_speed and self.printing:
             return AnkerStatus.PAUSED.value
-        if not self.current_speed and (is_heating_hotend or is_heating_bed):
+        if not self.progress and (is_heating_hotend or is_heating_bed):
             return AnkerStatus.PREHEATING.value
-        if not self.current_speed:  # Unsure if this is the correct condition
+        if not self.printing:
             return AnkerStatus.IDLE.value
         else:
             return AnkerStatus.PRINTING.value
