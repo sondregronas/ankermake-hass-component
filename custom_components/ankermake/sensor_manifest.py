@@ -45,14 +45,12 @@ SENSOR_DESCRIPTIONS = [
         key="print_start_time",
         name="Start Time",
         icon="mdi:timer-outline",
-        entity_registry_enabled_default=False,
     ),
     # Estimated Finish Time
     Description(
         key="print_est_finish_time",
         name="Estimated Finish Time",
         icon="mdi:timer-outline",
-        entity_registry_enabled_default=False,
     ),
     # Filament Used
     Description(
