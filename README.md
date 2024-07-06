@@ -1,10 +1,15 @@
 # AnkerMake Home Assistant Component
 
-<img src=".github/media/device_view.png" width="70%">
-
 Ever wanted a quick way to check the status of your AnkerMake M5 3D printer? This Home Assistant component allows you to
 do just that! It listens to the mqtt socket of an [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
 instance and updates the status of your printer in real-time.
+
+<img src=".github/media/device_view.png" width="70%">
+
+> Note: There are a lot of hidden entities in the image above, which are mostly set as attributes of the displayed
+> entities, such as the current print time, the current layer, the current print progress, the current print time left,
+> etc.
+
 
 `3D Printer state changes to Finished -> Flash some pretty lights -> Hotend temperature is below 40C for 60 minutes -> Disconnect printer from power!`
 
