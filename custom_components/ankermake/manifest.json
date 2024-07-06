@@ -5,7 +5,7 @@
   "issue_tracker": "https://github.com/sondregronas/ankermake-hass-component/issues",
   "config_flow": true,
   "codeowners": [
-    "sondregronas"
+    "@sondregronas"
   ],
   "version": "0.3.0"
 }
