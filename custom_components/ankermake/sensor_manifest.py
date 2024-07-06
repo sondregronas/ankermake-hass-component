@@ -5,9 +5,9 @@ from homeassistant.components.sensor import SensorEntityDescription
 from custom_components.ankermake.ankermake_mqtt_adapter import AnkerStatus
 
 
+# Linter is complaining without this class, it is strictly unnecessary
 class Description(SensorEntityDescription):
     def __init__(self, *args, **kwargs):
-        # Linter is complaining without this...
         super().__init__(*args, **kwargs)
 
 
@@ -19,6 +19,14 @@ BINARY_SENSOR_DESCRIPTIONS = [
         name="AI Detection Enabled",
         icon="mdi:brain",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,
+    ),
+    # Motor Locked
+    Description(
+        key="motor_locked",
+        name="Motor Locked",
+        icon="mdi:lock",
+        device_class=BinarySensorDeviceClass.LOCK,
         entity_registry_enabled_default=False,
     ),
 ]
@@ -51,7 +59,7 @@ SENSOR_DESCRIPTIONS = [
         key="filament_used",
         name="Filament Used",
         icon="mdi:pipe",
-        native_unit_of_measurement="mm",
+        native_unit_of_measurement="m",
         entity_registry_enabled_default=False,
     ),
     # Current Speed
@@ -68,6 +76,14 @@ SENSOR_DESCRIPTIONS = [
         name="Max Speed",
         icon="mdi:speedometer",
         native_unit_of_measurement="mm/s",
+        entity_registry_enabled_default=False,
+    ),
+    # Fan Speed
+    Description(
+        key="fan_speed",
+        name="Fan Speed",
+        icon="mdi:fan",
+        native_unit_of_measurement=const.PERCENTAGE,
         entity_registry_enabled_default=False,
     ),
     # Current Layer
@@ -118,6 +134,8 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
         {
             'state': 'status',
             'ai_enabled': 'ai_enabled',
+            'motor_locked': 'motor_locked',
+            'error_message': 'error_message',
         }
     ],
     # Hotend Sensor
@@ -131,6 +149,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'state': 'hotend_temp',
             'nozzle_type': 'nozzle_type',
             'target_temp': 'target_hotend_temp',
+            'fan_speed': 'fan_speed',
         }
     ],
     # Bed Sensor
@@ -169,5 +188,16 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'current_layer': 'current_layer',
             'total_layers': 'total_layers',
         }
-    ]
+    ],
+    # Error Message
+    [Description(
+        key="error_message",
+        name="Error Message",
+        icon="mdi:alert",
+    ),
+        {
+            'state': 'error_message',
+            'error_level': 'error_level',
+        }
+    ],
 ]

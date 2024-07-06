@@ -68,6 +68,7 @@ class CommandTypes(Enum):
     UNKNOWN_1081 = 1081  # Not used
     UNKNOWN_1084 = 1084  # Not used
     TEMP_IS_LEVELED = 1072  # isLeveled: 1
+    TEMP_ERROR_CODE = 1085  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '{"curFilamentType":["PLA"]}', 'commandType': 1085}
     TEMP_NOZZLE_TYPE = 1093  # value: 0, nozzle_type: 0
     ZZ_STEST_CMD_GCODE_TRANSPOR = 2018  # Not used
     ZZ_MQTT_CMD_ALEXA_MSG = 3000  # Not used
@@ -88,6 +89,9 @@ RESET_STATES = [AnkerStatus.OFFLINE, AnkerStatus.IDLE]
 NOZZLE_TYPES = {
     "0": "Standard",
 }
+ERROR_CODES = {
+    '0xFF01030001': "Filament Broken",
+}
 
 
 @dataclass
@@ -101,10 +105,16 @@ class AnkerData:
 
     paused: bool = False
 
+    error_message: str = ""
+    error_level: str = ""
+    error_ext: str = ""
+
     progress: int = 0
     elapsed_time: int = 0
     remaining_time: int = 0
     total_time: int = 0
+
+    fan_speed: int = 0
 
     nozzle_type: str = NOZZLE_TYPES.get("0")  # TODO: Figure out what nozzle_types are available
     bed_leveled: bool = True
@@ -112,10 +122,12 @@ class AnkerData:
     print_start_time: datetime = None
     print_est_finish_time: datetime = None
 
+    motor_locked: bool = False
     ai_enabled: bool = False
 
-    filament_used: int = 0
-    filament_unit: str = "mm"
+    # filament: str = ""  # TODO: Currently no way of knowing what filament is used (unless deriving from job_name or an error)
+    filament_used: float = 0
+    filament_unit: str = "m"
 
     current_speed: int = 0
     max_speed: int = 500
@@ -148,13 +160,16 @@ class AnkerData:
         if new_status == self._old_status:
             return
 
+        if self._old_status == AnkerStatus.ERROR:
+            self.error_message = ""
+            self.error_level = ""
+
         if new_status in RESET_STATES:
             self._reset()
         self._old_status = new_status
 
     @property
     def status(self) -> str:
-        # TODO: Add "error" state
         status = AnkerStatus.PRINTING
 
         # Check if the printer is heating up
@@ -163,6 +178,8 @@ class AnkerData:
 
         if self._last_heartbeat < datetime.now() - timedelta(seconds=30):
             status = AnkerStatus.OFFLINE
+        elif self.error_message:
+            status = AnkerStatus.ERROR
         elif self.paused:
             status = AnkerStatus.PAUSED
         elif not self.progress and (is_heating_hotend or is_heating_bed):
@@ -186,6 +203,12 @@ class AnkerData:
     def update(self, websocket_message: dict):
         command_type = websocket_message.get("commandType")
         match command_type:
+            case CommandTypes.ZZ_MQTT_CMD_EVENT_NOTIFY.value:
+                # If the status is "finished", reset the data
+                # (Printer does not seem to send a CMD_EVENT_NOTIFY message until you hit "finish" on the printer)
+                # This is a bit inconsistent...
+                if self.status == AnkerStatus.FINISHED.value:
+                    self._reset()
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
                 # Update the status
                 self.job_name = websocket_message.get("name")
@@ -200,8 +223,8 @@ class AnkerData:
 
                 self.ai_enabled = websocket_message.get("aiFlag") == 1
 
-                self.filament_used = websocket_message.get("filamentUsed")
-                self.filament_unit = websocket_message.get("filamentUnit")
+                self.filament_used = websocket_message.get(
+                    "filamentUsed") / 1000  # Divide by 1000 to get the correct value
 
                 # Register new print job (only on this event)
                 self._new_job_handler()
@@ -211,11 +234,17 @@ class AnkerData:
                 self.total_layers = websocket_message.get("total_layer")
             case CommandTypes.ZZ_MQTT_CMD_NOZZLE_TEMP.value:
                 self._pulse()  # _pulse goes here since this is a reliable mqtt message that doesnt get spammed too much
-                self.hotend_temp = websocket_message.get("currentTemp") / 100
-                self.target_hotend_temp = websocket_message.get("targetTemp") / 100
+                self.hotend_temp = websocket_message.get("currentTemp") / 100  # Divide by 100 to get the correct value
+                self.target_hotend_temp = websocket_message.get(
+                    "targetTemp") / 100  # Divide by 100 to get the correct value
+            case CommandTypes.ZZ_MQTT_CMD_FAN_SPEED.value:
+                self.fan_speed = websocket_message.get("value")
+            case CommandTypes.ZZ_MQTT_CMD_MOTOR_LOCK.value:
+                self.motor_locked = websocket_message.get("lock") == 1
             case CommandTypes.ZZ_MQTT_CMD_HOTBED_TEMP.value:
-                self.bed_temp = websocket_message.get("currentTemp") / 100
-                self.target_bed_temp = websocket_message.get("targetTemp") / 100
+                self.bed_temp = websocket_message.get("currentTemp") / 100  # Divide by 100 to get the correct value
+                self.target_bed_temp = websocket_message.get(
+                    "targetTemp") / 100  # Divide by 100 to get the correct value
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SPEED.value:
                 self.current_speed = websocket_message.get("value")
             case CommandTypes.ZZ_MQTT_CMD_PRINT_CONTROL.value:
@@ -227,6 +256,14 @@ class AnkerData:
                                                     str(websocket_message.get("nozzle_type")))
             case CommandTypes.TEMP_IS_LEVELED.value:
                 self.bed_leveled = websocket_message.get("isLeveled") == 1
+            # Errors (?)
+            case CommandTypes.TEMP_ERROR_CODE.value:
+                self.error_level = websocket_message.get("errorLevel")
+                self.error_message = ERROR_CODES.get(websocket_message.get("errorCode"),
+                                                     websocket_message.get("errorCode"))
+                if self.error_message not in ERROR_CODES.values():
+                    _LOGGER.error(
+                        f"Unknown error code: {self.error_message}. Please report this message to the developer with a description of what you were doing when this error occurred. (Received message: {websocket_message})")
             # If the command_type is not handled, raise an exception (unless we know it's not used)
             case _:
                 if command_type not in CommandTypes:
