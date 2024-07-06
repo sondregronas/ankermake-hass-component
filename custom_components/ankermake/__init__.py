@@ -35,7 +35,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up zaptec as config entry."""
+    """Set up ankermake as config entry."""
 
     _LOGGER.info(STARTUP)
     _LOGGER.debug("Setting up entry %s: %s", entry.entry_id, entry.data)
