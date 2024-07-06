@@ -173,8 +173,8 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
     ],
     # Print job
     [Description(
-        key="print_job",
-        name="Print Job Progress",
+        key="progress",
+        name="Progress",
         icon="mdi:file-document",
         native_unit_of_measurement=const.PERCENTAGE,
     ),
@@ -210,8 +210,8 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
     ],
     # Error Message
     [Description(
-        key="error_message",
-        name="Error Message",
+        key="error",
+        name="Error",
         icon="mdi:alert",
     ),
         {
