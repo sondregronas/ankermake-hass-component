@@ -142,6 +142,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'ai_enabled': 'ai_enabled',
             'motor_locked': 'motor_locked',
             'error_message': 'error_message',
+            'error_level': 'error_level',
         }
     ],
     # Hotend Sensor
@@ -213,6 +214,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
         key="error",
         name="Error",
         icon="mdi:alert",
+        entity_registry_enabled_default=False,
     ),
         {
             'state': 'error_message',
