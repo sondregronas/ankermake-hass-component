@@ -1,6 +1,6 @@
 # AnkerMake Home Assistant Component
 
-![Preview](.github/media/img.png)
+<img src=".github/media/img.png" width="20%">
 
 This component actively listens to the mqtt socket of a
 running [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
@@ -17,6 +17,7 @@ Reboot then go to the integrations page in Home Assistant and add the AnkerMake 
 There are probably many issues to list...
 
 - There is no image for the integration
+- Sensors should/could be consolidated into attributes
 
 ## Testing
 
