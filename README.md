@@ -35,8 +35,8 @@ Contributions are very welcome!
 
 The easiest way to add new sensors is by editing
 the [sensor_manifest.py](./custom_components/ankermake/sensor_manifest.py)
-and [ankermake_mqtt_api.py](./custom_components/ankermake/ankermake_mqtt_api.py) files. The latter file converts the
-published mqtt messages to a `AnkerData` object which corresponds to the `key` in the `sensor_manifest.py` file.
+and [ankermake_mqtt_adapter.py](./custom_components/ankermake/ankermake_mqtt_adapter.py) files. The latter file converts
+the published mqtt messages to a `AnkerData` object which corresponds to the `key` in the `sensor_manifest.py` file.
 
 The `docker-compose.yml` file can be used to start a local home assistant instance with the component installed.
 
