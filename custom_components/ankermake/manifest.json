@@ -6,7 +6,7 @@
   ],
   "config_flow": true,
   "documentation": "https://github.com/sondregronas/ankermake-hass-component",
-  "issue_tracker": "https://github.com/sondregronas/ankermake-hass-component/issues",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/sondregronas/ankermake-hass-component/issues",
   "version": "0.3.0"
 }
