@@ -76,7 +76,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
         name=coordinator.config["printer_name"])
 
     for description in SENSOR_DESCRIPTIONS:
-        _LOGGER.error(description)
         entities.append(AnkerMakeSensor(coordinator, description, dev_info))
     for description, attributes in SENSOR_WITH_ATTR_DESCRIPTIONS:
         entities.append(AnkerMakeSensorWithAttr(coordinator, description, dev_info, attributes))

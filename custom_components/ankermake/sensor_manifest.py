@@ -1,4 +1,5 @@
 from homeassistant import const
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorEntityDescription
 
 
@@ -8,8 +9,7 @@ class Description(SensorEntityDescription):
         super().__init__(*args, **kwargs)
 
 
-BINARY_SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTIONS
-"""[
+BINARY_SENSOR_DESCRIPTIONS = [
     # AI Enabled
     Description(
         key="ai_enabled",
@@ -18,55 +18,29 @@ BINARY_SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTI
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_registry_enabled_default=False,
     ),
-]"""
+]
 
-SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTIONS
-"""[
-    # Status
-    Description(
-        key="status",
-        name="Status",
-        icon="mdi:printer-3d",
-    ),
+SENSOR_DESCRIPTIONS = [
     # Job Name
     Description(
         key="job_name",
         name="Job Name",
         icon="mdi:file-document",
+        entity_registry_enabled_default=False,
     ),
-    # Gcode Preview URL (Image)
+    # Start Time
     Description(
-        key="image",
-        name="Gcode Preview URL",
-        icon="mdi:image",
-    ),
-    # Progress
-    Description(
-        key="progress",
-        name="Progress",
-        icon="mdi:progress-wrench",
-        native_unit_of_measurement=const.PERCENTAGE,
-    ),
-    # Elapsed Time
-    Description(
-        key="elapsed_time",
-        name="Elapsed Time",
+        key="print_start_time",
+        name="Start Time",
         icon="mdi:timer-outline",
-        native_unit_of_measurement=const.UnitOfTime.SECONDS,
+        entity_registry_enabled_default=False,
     ),
-    # Remaining Time
+    # Estimated Finish Time
     Description(
-        key="remaining_time",
-        name="Remaining Time",
-        icon="mdi:timer-sand",
-        native_unit_of_measurement=const.UnitOfTime.SECONDS,
-    ),
-    # Total Time
-    Description(
-        key="total_time",
-        name="Total Time",
-        icon="mdi:timer",
-        native_unit_of_measurement=const.UnitOfTime.SECONDS,
+        key="print_est_finish_time",
+        name="Estimated Finish Time",
+        icon="mdi:timer-outline",
+        entity_registry_enabled_default=False,
     ),
     # Filament Used
     Description(
@@ -74,6 +48,7 @@ SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTIONS
         name="Filament Used",
         icon="mdi:pipe",
         native_unit_of_measurement="mm",
+        entity_registry_enabled_default=False,
     ),
     # Current Speed
     Description(
@@ -81,25 +56,21 @@ SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTIONS
         name="Current Speed",
         icon="mdi:speedometer",
         native_unit_of_measurement="mm/s",
+        entity_registry_enabled_default=False,
     ),
     # Current Layer
     Description(
         key="current_layer",
         name="Current Layer",
         icon="mdi:layers-triple",
+        entity_registry_enabled_default=False,
     ),
     # Total Layers
     Description(
         key="total_layers",
         name="Total Layers",
         icon="mdi:layers-triple",
-    ),
-    # Hotend Temp
-    Description(
-        key="hotend_temp",
-        name="Hotend Temperature",
-        icon="mdi:thermometer",
-        native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
+        entity_registry_enabled_default=False,
     ),
     # Target Hotend Temp
     Description(
@@ -107,13 +78,7 @@ SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTIONS
         name="Target Hotend Temperature",
         icon="mdi:thermometer",
         native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
-    ),
-    # Bed Temp
-    Description(
-        key="bed_temp",
-        name="Bed Temperature",
-        icon="mdi:thermometer",
-        native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
+        entity_registry_enabled_default=False,
     ),
     # Target Bed Temp
     Description(
@@ -121,8 +86,9 @@ SENSOR_DESCRIPTIONS = []  # Unused in favor of SENSOR_WITH_ATTR_DESCRIPTIONS
         name="Target Bed Temperature",
         icon="mdi:thermometer",
         native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
+        entity_registry_enabled_default=False,
     ),
-]"""
+]
 
 SENSOR_WITH_ATTR_DESCRIPTIONS = [
     # 3D Printer Sensor
@@ -140,7 +106,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
     # Hotend Sensor
     [Description(
         key="hotend",
-        name="Hotend",
+        name="Hotend Temperature",
         icon="mdi:thermometer",
         native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
     ),
@@ -152,7 +118,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
     # Bed Sensor
     [Description(
         key="bed",
-        name="Bed",
+        name="Bed Temperature",
         icon="mdi:thermometer",
         native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
     ),
@@ -164,7 +130,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
     # Print job
     [Description(
         key="print_job",
-        name="Print Job",
+        name="Print Job Progress",
         icon="mdi:file-document",
         native_unit_of_measurement=const.PERCENTAGE,
     ),
