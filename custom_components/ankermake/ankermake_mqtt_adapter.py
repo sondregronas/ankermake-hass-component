@@ -86,7 +86,7 @@ class AnkerData:
 
     @property
     def printing(self) -> bool:
-        return self.job_name != ""
+        return self.job_name != "" and not self.progress
 
     @property
     def filament_weight(self) -> float:
