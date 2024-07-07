@@ -182,15 +182,6 @@ class AnkerData:
         """Update the AnkerData object with a new message from the AnkerMake printer."""
         command_type = websocket_message.get("commandType")
         match command_type:
-            # Event notify is broadcast a lot during printing, not so much when idle.. might send something
-            # when the printer is interacted with physically (touch screen) but not sure
-            case CommandTypes.ZZ_MQTT_CMD_EVENT_NOTIFY.value:
-                # If the status is "finished", reset the data
-                # (Printer does not seem to send a CMD_EVENT_NOTIFY message until you hit "finish" on the printer)
-                # This is a bit inconsistent...
-                if self.status == AnkerStatus.FINISHED.value:
-                    self._reset()
-
             # Print schedule is broadcast at fixed intervals (every 5 seconds or so)
             # Not to be confused with print started (unused) that contains mostly the same data
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
