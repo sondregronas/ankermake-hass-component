@@ -116,8 +116,7 @@ class AnkerData:
 
         # Reset the error message if the status is no longer an error
         if self._old_status == AnkerStatus.ERROR:
-            self.error_message = ""
-            self.error_level = ""
+            self._remove_error()
 
         # Reset the data if the status is one of the reset states
         if new_status in RESET_STATES:
@@ -136,7 +135,7 @@ class AnkerData:
 
         if self._last_heartbeat < datetime.now(tz=self._timezone) - timedelta(seconds=30):
             status = AnkerStatus.OFFLINE
-        elif self.error_message:
+        elif self.in_error_state:
             status = AnkerStatus.ERROR
         elif self.paused:
             status = AnkerStatus.PAUSED
@@ -169,6 +168,7 @@ class AnkerData:
 
     def _new_print_job(self):
         """Things to do when a new print job is registered (when the job_name changes)"""
+        self._remove_error()
         self.print_start_time = datetime.now(tz=self._timezone) - timedelta(seconds=self.elapsed_time)
         self._update_target_time()
         self._update_filament()
@@ -177,6 +177,16 @@ class AnkerData:
         """Handler for new print jobs"""
         if self.job_name != self._old_job_name:
             self._new_print_job()
+
+    @property
+    def in_error_state(self) -> bool:
+        """Returns True if the printer has an error."""
+        return self.error_message != ""
+
+    def _remove_error(self):
+        """Removes the error from the AnkerData object, allowing the status to change."""
+        self.error_message = ""
+        self.error_level = ""
 
     def update(self, websocket_message: dict):
         """Update the AnkerData object with a new message from the AnkerMake printer."""
@@ -191,6 +201,7 @@ class AnkerData:
 
                 progress = websocket_message.get("progress") / 100
                 self.progress = round(progress, 1)
+
                 _elapsed_time = int(websocket_message.get("totalTime"))
                 _remaining_time = int(websocket_message.get("time"))
                 self.elapsed_time = _elapsed_time
@@ -264,7 +275,7 @@ class AnkerData:
                                                      websocket_message.get("errorCode"))
                 if self.error_message not in ERROR_CODES.values():
                     _LOGGER.error(
-                        f"Unknown error code: {self.error_message}. Please report this message to the developer with a description of what you were doing when this error occurred. (Received message: {websocket_message})")
+                        f"Unknown error occured: {self.error_message}. Please open a github issue with a description of what you were doing when this error occurred, and please look in the AnkerMake app for a proper error message. Include this: (Received message: {websocket_message})")
 
             # If the command_type is not handled, raise an exception (unless we know it's not used)
             case _:

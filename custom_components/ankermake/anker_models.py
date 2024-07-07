@@ -149,8 +149,16 @@ FILAMENT_DENSITY = {
 
 # TODO: Investigate if there are more nozzle types
 NOZZLE_TYPES = {
-    "0": "Standard",
+    '0': 'Standard',
 }
 ERROR_CODES = {
-    '0xFF01030001': "Filament Broken",
+    '0xFF01030001': 'Filament Broken',  # P1 The filament is broken. Please replace the filament and try again.
+    '0xFF01030005': 'Failed to transfer Gcode, please try again.',  # As shown in the app.
+}
+
+# TODO: This is just a guess, these are not used anywhere!!
+ERROR_LEVELS = {
+    'P0': 'INFO',  # Before printing / something to do with gcode
+    'P1': 'ERROR',  # During printing / something to do with filament
+    # 'P2': 'CRITICAL',  # Just a guess, haven't seen P2 yet
 }
