@@ -40,7 +40,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     description = Description(
         key="quality",
         name="Video Quality",
-        icon="mdi:quality-high"
+        icon="mdi:quality-high",
+        entity_registry_enabled_default=False
     )
     dev_info = DeviceInfo(
         manufacturer=MANUFACTURER,
