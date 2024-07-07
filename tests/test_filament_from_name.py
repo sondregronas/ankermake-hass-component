@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent) + '\\custom_components')
 
-from ankermake.ankermake_mqtt_adapter import AnkerData, FilamentType
+from custom_components.ankermake.ankermake_mqtt_adapter import AnkerData, FilamentType
 
 
 def test_filament_from_name():
