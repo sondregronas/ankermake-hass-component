@@ -47,6 +47,8 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
         if key.startswith('%%TD='):
             val = getattr(self.coordinator.ankerdata, key[5:])
             return self.td_convert(val)
+        elif key.startswith('='):
+            return key[1:]
 
         return getattr(self.coordinator.ankerdata, key)
 

@@ -138,6 +138,7 @@ SENSOR_DESCRIPTIONS = [
 # Dict = {entity_attribute: key_in_ankerdata} (state sets the entity state)
 # If one does not intend to use an ankerdata attribute an if statement must be added to the _update_from_anker method
 # in sensor.py to prevent an AttributeError (alternatively see _filter_handler method in sensor.py)
+# = denotes a static value ('unit': '=mm/s' would set the unit to mm/s, instead of using an attribute from ankerdata)
 SENSOR_WITH_ATTR_DESCRIPTIONS = [
     # 3D Printer Sensor
     [Description(
@@ -199,7 +200,9 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'start_time': 'print_start_time',
             'target_time': 'print_target_time',
             'current_speed': 'current_speed',
+            'current_speed_unit': '=mm/s',
             'max_speed': 'max_speed',
+            'max_speed_unit': '=mm/s',
             'current_layer': 'current_layer',
             'total_layers': 'total_layers',
         }
@@ -216,8 +219,11 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
         {
             'state': 'filament',
             'filament_used': 'filament_used',
+            'filament_used_unit': '=m',
             'filament_weight': 'filament_weight',
+            'filament_weight_unit': '=g',
             'filament_density': 'filament_density',
+            'filament_density_unit': '=m³',
         }
     ],
     # Error Message
