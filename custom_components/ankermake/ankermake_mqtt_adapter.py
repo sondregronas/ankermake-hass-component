@@ -72,20 +72,23 @@ class AnkerData:
     target_bed_temp: float = 0
 
     def _reset(self):
-        # Reset every value except for those with leading underscores to their default value
+        """Reset every value except for those with leading underscores to their default value"""
         [setattr(self, key, getattr(self.__class__, key))
          for key, value in self.__dict__.items()
          if not key.startswith("_")]
 
     def _pulse(self):
+        """Pulse the printer's heartbeat. (Used to determine if the printer is online)"""
         self._last_heartbeat = datetime.now(tz=self._timezone)
 
     @property
     def online(self) -> bool:
+        """Returns True if the printer is online."""
         return self.status != AnkerStatus.OFFLINE.value
 
     @property
     def printing(self) -> bool:
+        """Returns True if the printer is currently printing."""
         return self.job_name != "" or self.progress
 
     @property
@@ -104,13 +107,19 @@ class AnkerData:
         return round(density, 2)
 
     def _new_status_handler(self, new_status: AnkerStatus):
+        """Handler for new status changes."""
+        # If the status is the same as the old status, return
         if new_status == self._old_status:
             return
 
+        self._update_target_time()
+
+        # Reset the error message if the status is no longer an error
         if self._old_status == AnkerStatus.ERROR:
             self.error_message = ""
             self.error_level = ""
 
+        # Reset the data if the status is one of the reset states
         if new_status in RESET_STATES:
             self._reset()
 
@@ -118,6 +127,7 @@ class AnkerData:
 
     @property
     def status(self) -> str:
+        """Returns the current state of the printer."""
         status = AnkerStatus.PRINTING
 
         # Check if the printer is heating up
@@ -140,10 +150,13 @@ class AnkerData:
         self._new_status_handler(status)
         return status.value
 
-    def _new_print_job(self):
-        self.print_start_time = (datetime.now(tz=self._timezone) - timedelta(seconds=self.elapsed_time))
-        self.print_target_time = self.print_start_time + timedelta(seconds=self.total_time)
+    def _update_target_time(self):
+        """Should not call this too often (on state change / new print job)"""
+        if self.remaining_time:
+            self.print_target_time = datetime.now(tz=self._timezone) + timedelta(seconds=self.remaining_time)
 
+    def _update_filament(self):
+        """Should not call this too often (new print job)"""
         # Get Filament from filename (assume it is the last filament mentioned in the filename)
         matches = re.findall(FilamentType.options_regex(), self.job_name, re.IGNORECASE)
         # Make sure the last match is a lone word (e.g. "PLA" and not "PLANET")
@@ -154,11 +167,19 @@ class AnkerData:
         else:
             self.filament = FilamentType.UNKNOWN.value
 
+    def _new_print_job(self):
+        """Things to do when a new print job is registered (when the job_name changes)"""
+        self.print_start_time = datetime.now(tz=self._timezone) - timedelta(seconds=self.elapsed_time)
+        self._update_target_time()
+        self._update_filament()
+
     def _new_job_handler(self):
+        """Handler for new print jobs"""
         if self.job_name != self._old_job_name:
             self._new_print_job()
 
     def update(self, websocket_message: dict):
+        """Update the AnkerData object with a new message from the AnkerMake printer."""
         command_type = websocket_message.get("commandType")
         match command_type:
             # Event notify is broadcast a lot during printing, not so much when idle.. might send something
