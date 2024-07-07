@@ -1,6 +1,6 @@
 from homeassistant import const
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.components.sensor import SensorEntityDescription
+from homeassistant.components.sensor import SensorEntityDescription, SensorDeviceClass
 
 from .ankermake_mqtt_adapter import AnkerStatus, FilamentType
 
@@ -45,12 +45,14 @@ SENSOR_DESCRIPTIONS = [
         key="print_start_time",
         name="Start Time",
         icon="mdi:timer-outline",
+        device_class=SensorDeviceClass.TIMESTAMP,
     ),
-    # Estimated Finish Time
+    # Target Time
     Description(
-        key="print_est_finish_time",
-        name="Estimated Finish Time",
+        key="print_target_time",
+        name="Target Time",
         icon="mdi:timer-outline",
+        device_class=SensorDeviceClass.TIMESTAMP,
     ),
     # Filament Used
     Description(
@@ -66,6 +68,14 @@ SENSOR_DESCRIPTIONS = [
         name="Filament Weight",
         icon="mdi:weight",
         native_unit_of_measurement=const.UnitOfMass.GRAMS,
+        entity_registry_enabled_default=False,
+    ),
+    # Filament Density
+    Description(
+        key="filament_density",
+        name="Filament Density",
+        icon="mdi:weight",
+        native_unit_of_measurement="m³",
         entity_registry_enabled_default=False,
     ),
     # Current Speed
@@ -187,7 +197,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'remaining_time': '%%TD=remaining_time',
             'total_print_time': '%%TD=total_time',
             'start_time': 'print_start_time',
-            'estimated_finish_time': 'print_est_finish_time',
+            'target_time': 'print_target_time',
             'current_speed': 'current_speed',
             'max_speed': 'max_speed',
             'current_layer': 'current_layer',
@@ -207,6 +217,7 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'state': 'filament',
             'filament_used': 'filament_used',
             'filament_weight': 'filament_weight',
+            'filament_density': 'filament_density',
         }
     ],
     # Error Message

@@ -33,13 +33,11 @@ Assistant add-on in their organization, but I have not tested it with this compo
 
 There are probably many issues to list...
 
-- Filament will ALWAYS be "Not Implemented" (I have no way of knowing what filament is loaded) - Might add a way to
-  manually set this in the future or derive it from the gcode name
+- Filament is just derived from the gcode name, which might not be accurate
 - There's probably an easier way to not poll the mqtt socket (requesting from the printer, right now it just listens on
   a separate thread)
 - The state will be forgotten if home assistant restarts
 - Config flow will not verify the connection to the ankerctl instance (it will just assume it's correct)
-- The integration does not respect the home assistant timezone (but it does for the system timezone)
 - No camera support (but can be worked around using go2rtc, though PPPP crashes a lot - stable when it doesn't crash!)
 - There are no ways to pause/stop a print
 - There are no unit tests :(

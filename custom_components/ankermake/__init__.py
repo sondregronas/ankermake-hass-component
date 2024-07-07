@@ -8,11 +8,13 @@ There isn't much to do here, as the responsibility of setting up the entities is
 from __future__ import annotations
 
 import asyncio
+import datetime
 import json
 import logging
 from datetime import timedelta
 
 import aiohttp
+import pytz
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
@@ -20,7 +22,8 @@ from homeassistant.helpers.entity import DeviceInfo, EntityDescription
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 
-from .ankermake_mqtt_adapter import AnkerData, AnkerException
+from .anker_models import AnkerException
+from .ankermake_mqtt_adapter import AnkerData
 from .const import DOMAIN, STARTUP, UPDATE_FREQUENCY_SECONDS
 
 PLATFORMS = [
@@ -47,9 +50,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info(STARTUP)
     _LOGGER.debug("Setting up entry %s: %s", entry.entry_id, entry.data)
 
+    tz = await hass.async_add_executor_job(pytz.timezone, hass.config.time_zone)
     coordinator = AnkerMakeUpdateCoordinator(
         hass,
         entry=entry,
+        tz=tz
     )
     await coordinator.async_config_entry_first_refresh()
 
@@ -63,11 +68,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry):
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, tz: datetime.tzinfo = None):
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=UPDATE_FREQUENCY_SECONDS))
 
         self.config = entry.data
-        self.ankerdata = AnkerData()
+        self.ankerdata = AnkerData(_timezone=tz)
         self.entry = entry
 
         self._listen_to_ws_task = asyncio.create_task(self._listen_to_ws())

@@ -7,7 +7,7 @@ from enum import Enum
 
 import aiohttp
 
-from .ankermake_mqtt_adapter import AnkerException
+from .anker_models import AnkerException
 
 
 class AnkerUtilException(AnkerException):
