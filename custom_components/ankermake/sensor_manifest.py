@@ -200,9 +200,8 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'start_time': 'print_start_time',
             'target_time': 'print_target_time',
             'current_speed': 'current_speed',
-            'current_speed_unit': '=mm/s',
             'max_speed': 'max_speed',
-            'max_speed_unit': '=mm/s',
+            'speed_unit': '=mm/s',
             'current_layer': 'current_layer',
             'total_layers': 'total_layers',
         }
