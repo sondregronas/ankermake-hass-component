@@ -26,7 +26,7 @@ RESET_STATES = [AnkerStatus.OFFLINE, AnkerStatus.IDLE]
 @dataclass
 class AnkerData:
     _timezone: datetime.tzinfo = None
-    _last_heartbeat: datetime = datetime.now(tz=_timezone)
+    _last_heartbeat: datetime = None
     _status: AnkerStatus = AnkerStatus.OFFLINE
     _old_status: AnkerStatus = None
     _old_job_name: str = ""
@@ -71,6 +71,11 @@ class AnkerData:
     bed_temp: float = 0
     target_bed_temp: float = 0
 
+    def __post_init__(self):
+        """Initialize the AnkerData object."""
+        # Set the last heartbeat to the epoch (so that the printer is considered offline until the first heartbeat)
+        self._last_heartbeat = datetime(1970, 1, 1, tzinfo=self._timezone)
+
     def _reset(self):
         """Reset every value except for those with leading underscores to their default value"""
         [setattr(self, key, getattr(self.__class__, key))
@@ -84,7 +89,8 @@ class AnkerData:
     @property
     def online(self) -> bool:
         """Returns True if the printer is online."""
-        return self.status != AnkerStatus.OFFLINE.value
+        # TODO: Make this less taxing on the system (checks n(entities) times per update cycle)
+        return self._last_heartbeat > datetime.now(tz=self._timezone) - timedelta(seconds=30)
 
     @property
     def printing(self) -> bool:
@@ -133,7 +139,7 @@ class AnkerData:
         is_heating_hotend = self.target_hotend_temp - 5 > self.hotend_temp > 30
         is_heating_bed = self.target_bed_temp - 2 > self.bed_temp > 30
 
-        if self._last_heartbeat < datetime.now(tz=self._timezone) - timedelta(seconds=30):
+        if not self.online:
             status = AnkerStatus.OFFLINE
         elif self.in_error_state:
             status = AnkerStatus.ERROR

@@ -40,9 +40,9 @@ There are probably many issues to list...
 - Config flow will not verify the connection to the ankerctl instance (it will just assume it's correct)
 - No camera support (but can be worked around using go2rtc, though PPPP crashes a lot - stable when it doesn't crash!)
 - There are no ways to pause/stop a print
-- There are no unit tests :(
-- Logging is pretty much non-existent, documentation is lacking
-- ankerctl can crash sometimes hindering the integration from working until it's restarted
+- There are (almost) no unit tests :(
+- Logging is pretty much non-existent, documentation is a bit lacking
+- ankerctl can crash sometimes, hindering the integration from working until it's restarted
 
 ## Testing
 
