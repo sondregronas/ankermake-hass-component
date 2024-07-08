@@ -5,6 +5,8 @@ services:
     volumes:
       - ./test:/config
       - ./custom_components:/config/custom_components
+      - ./tests/docker-overrides/const.py:/config/custom_components/ankermake/const.py
+      - ./tests/docker-overrides/manifest.json:/config/custom_components/ankermake/manifest.json
     restart: unless-stopped
     environment:
       - TZ=Europe/Oslo
