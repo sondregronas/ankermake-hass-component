@@ -12,10 +12,11 @@ jobs:
     steps:
       - uses: "actions/checkout@v4"
       - name: Get the latest tag
-        id: get_tag
-        run: echo ::set-output name=tag::$(git describe --tags --abbrev=0)
+        run: |
+          echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "TAG=${{ env.tag }}"
       - name: Set version to the latest tag
         run: |
-          sed -i "s/GITHUB_RELEASE_VERSION/${{ steps.get_tag.outputs.tag }}/g" custom_components/ankermake/manifest.json
-          sed -i "s/GITHUB_RELEASE_VERSION/${{ steps.get_tag.outputs.tag }}/g" custom_components/ankermake/const.py
+          sed -i "s/GITHUB_RELEASE_VERSION/${{ env.tag }}/g" custom_components/ankermake/manifest.json
+          sed -i "s/GITHUB_RELEASE_VERSION/${{ env.tag }}/g" custom_components/ankermake/const.py
       - uses: "home-assistant/actions/hassfest@master"
