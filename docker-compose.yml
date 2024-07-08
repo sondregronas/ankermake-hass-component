@@ -8,5 +8,6 @@ services:
     restart: unless-stopped
     environment:
       - TZ=Europe/Oslo
+      - ANKERMAKE_DEBUG=true
     ports:
       - "8123:8123"

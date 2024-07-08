@@ -1,4 +1,4 @@
-name: Validate with hassfest
+name: Validate
 
 on:
   push:
@@ -11,4 +11,12 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v4"
+      - name: Get the latest tag
+        run: |
+          echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          echo "TAG=${{ env.tag }}"
+      - name: Set version to the latest tag
+        run: |
+          sed -i "s/GITHUB_RELEASE_VERSION/${{ env.tag }}/g" custom_components/ankermake/manifest.json
+          sed -i "s/GITHUB_RELEASE_VERSION/${{ env.tag }}/g" custom_components/ankermake/const.py
       - uses: "home-assistant/actions/hassfest@master"

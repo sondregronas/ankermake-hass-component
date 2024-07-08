@@ -1,5 +1,5 @@
 NAME = 'AnkerMake'
-VERSION = '0.4.0'
+VERSION = 'GITHUB_RELEASE_VERSION'
 ISSUEURL = 'https://github.com/sondregronas/ankermake-hass-component/issues'
 
 DOMAIN = 'ankermake'

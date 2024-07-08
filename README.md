@@ -1,5 +1,9 @@
 # AnkerMake Home Assistant Component
 
+[![Validation](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/hassfest.yml/badge.svg)](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/hassfest.yml)
+[![Tests](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/tests.yml/badge.svg)](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/tests.yml)
+[![Release](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/release.yml/badge.svg)](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/release.yml)
+
 Ever wanted a quick way to check the status of your AnkerMake M5 3D printer? This Home Assistant component allows you to
 do just that! It listens to the mqtt socket of an [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
 instance and updates the status of your printer in real-time.
@@ -19,7 +23,9 @@ instance and updates the status of your printer in real-time.
 
 Download and install the component via hacs (alternatively copy the `custom_components/ankermake` folder to your Home
 Assistant config) and reboot. You will then be able to add the AnkerMake integration in the Home Assistant integrations
-page.
+page (or by clicking the badge below).
+
+[![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ankermake)
 
 > Note: You can add as many instances as you'd like (but you will need an ankerctl instance running for each one).
 

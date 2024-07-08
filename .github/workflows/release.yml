@@ -1,0 +1,30 @@
+name: Release
+
+on:
+  release:
+  workflow_dispatch:
+jobs:
+  hacs:
+    name: HACS Action
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set version to release tag
+        run: |
+          sed -i "s/GITHUB_RELEASE_VERSION/${{ github.event.release.tag_name }}/g" custom_components/ankermake/manifest.json
+          sed -i "s/GITHUB_RELEASE_VERSION/${{ github.event.release.tag_name }}/g" custom_components/ankermake/const.py
+
+      - name: Zip custom_components/ankermake
+        run: zip -r ankermake.zip custom_components/ankermake
+
+      - name: Upload release asset to the existing release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./ankermake.zip
+          asset_name: ankermake.zip
+          asset_content_type: application/zip
+          token: ${{ secrets.GITHUB_TOKEN }}
+          overwrite: true
