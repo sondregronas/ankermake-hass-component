@@ -4,6 +4,7 @@ This module is responsible for handling the MQTT messages from the AnkerMake pri
 
 In other words, this module is the "brain" of the AnkerMake integration.
 """
+import os
 import re
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -19,6 +20,8 @@ from .anker_models import (CommandTypes,
                            ERROR_CODES)
 
 _LOGGER = getLogger(__name__)
+if os.environ.get("ANKERMAKE_DEBUG", False):
+    _LOGGER.setLevel("DEBUG")
 
 RESET_STATES = [AnkerStatus.OFFLINE, AnkerStatus.IDLE]
 
@@ -197,6 +200,9 @@ class AnkerData:
     def update(self, websocket_message: dict):
         """Update the AnkerData object with a new message from the AnkerMake printer."""
         command_type = websocket_message.get("commandType")
+        # Debug logging for all messages except those that spam
+        if command_type not in [1081, 1084, 1003, 1004]:
+            _LOGGER.debug(f"Received message: {websocket_message}")
         match command_type:
             # Print schedule is broadcast at fixed intervals (every 5 seconds or so)
             # Not to be confused with print started (unused) that contains mostly the same data

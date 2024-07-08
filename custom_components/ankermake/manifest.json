@@ -8,5 +8,5 @@
   "documentation": "https://github.com/sondregronas/ankermake-hass-component",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/sondregronas/ankermake-hass-component/issues",
-  "version": "0.4.0"
+  "version": "GITHUB_RELEASE_VERSION"
 }
