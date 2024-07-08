@@ -2,7 +2,11 @@ name: Release
 
 on:
   release:
-  workflow_dispatch:
+
+permissions:
+  contents: write
+
+
 jobs:
   hacs:
     name: HACS Action
@@ -10,6 +14,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set version to release tag
         run: |
@@ -20,11 +26,23 @@ jobs:
         run: zip -r ankermake.zip custom_components/ankermake
 
       - name: Upload release asset to the existing release
-        uses: actions/upload-release-asset@v1
+        uses: actions/github-script@v7
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./ankermake.zip
-          asset_name: ankermake.zip
-          asset_content_type: application/zip
-          token: ${{ secrets.GITHUB_TOKEN }}
-          overwrite: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const tag = context.ref.replace("refs/tags/", "");
+            // Get release for this tag
+            const release = await github.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag
+            });
+            // Upload the release asset
+            await github.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.data.id,
+              name: "ankermake.zip",
+              data: await fs.readFileSync("ankermake.zip")
+            });
