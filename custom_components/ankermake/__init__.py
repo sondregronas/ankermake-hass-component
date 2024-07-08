@@ -32,6 +32,7 @@ PLATFORMS = [
     Platform.LIGHT,
     Platform.SELECT,
     Platform.IMAGE,
+    Platform.BUTTON
 ]
 
 _LOGGER = logging.getLogger(__name__)

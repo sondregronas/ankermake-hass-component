@@ -1,26 +1,23 @@
 """
-There is only one (hardcoded) select entity here, which is the video quality setting on the AnkerMake printers camera.
+There is only one (hardcoded) entity here, which is the reload ankerctl button.
 """
 
 import logging
 
-from homeassistant.components.select import SelectEntity
+from homeassistant.components.button import ButtonEntity
 from homeassistant.core import callback
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from . import AnkerMakeBaseEntity
-from .ankerctl_util import VideoQuality, set_video_quality, AnkerUtilException
+from .ankerctl_util import AnkerUtilException, reload_ankerctl
 from .const import DOMAIN, MANUFACTURER
 from .sensor_manifest import Description
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class AnkerMakeSelectSensor(AnkerMakeBaseEntity, SelectEntity):
-    _attr_options = list(VideoQuality.__members__.keys())
-    _attr_current_option = VideoQuality.HD.name
-
+class AnkerMakeButtonSensor(AnkerMakeBaseEntity, ButtonEntity):
     @callback
     def _update_from_anker(self) -> None:
         if self.coordinator.ankerdata.online:
@@ -28,10 +25,9 @@ class AnkerMakeSelectSensor(AnkerMakeBaseEntity, SelectEntity):
         else:
             self._attr_available = False
 
-    async def async_select_option(self, option: str) -> None:
+    async def async_press(self) -> None:
         try:
-            await set_video_quality(self.coordinator.config['host'], VideoQuality.__members__[option])
-            self._attr_current_option = option
+            await reload_ankerctl(self.coordinator.config['host'])
         except AnkerUtilException as e:
             raise ServiceValidationError(e)
 
@@ -39,14 +35,13 @@ class AnkerMakeSelectSensor(AnkerMakeBaseEntity, SelectEntity):
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
     description = Description(
-        key="quality",
-        name="Video Quality",
-        icon="mdi:quality-high",
-        entity_registry_enabled_default=False
+        key="reload_ankerctl",
+        name="Reload ankerctl",
+        icon="mdi:reload",
     )
     dev_info = DeviceInfo(
         manufacturer=MANUFACTURER,
         identifiers={(DOMAIN, entry.entry_id)},
         name=coordinator.config["printer_name"])
-    entity = AnkerMakeSelectSensor(coordinator, description, dev_info)
+    entity = AnkerMakeButtonSensor(coordinator, description, dev_info)
     async_add_entities([entity], True)

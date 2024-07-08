@@ -201,7 +201,7 @@ class AnkerData:
         """Update the AnkerData object with a new message from the AnkerMake printer."""
         command_type = websocket_message.get("commandType")
         # Debug logging for all messages except those that spam
-        if command_type not in [1081, 1084, 1003, 1004]:
+        if command_type not in [1000, 1001, 1003, 1004, 1006, 1081, 1084]:
             _LOGGER.debug(f"Received message: {websocket_message}")
         match command_type:
             # Print schedule is broadcast at fixed intervals (every 5 seconds or so)

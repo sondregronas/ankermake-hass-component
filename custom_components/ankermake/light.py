@@ -7,6 +7,7 @@ import logging
 
 from homeassistant.components.light import LightEntity
 from homeassistant.core import callback
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from . import AnkerMakeBaseEntity
@@ -34,14 +35,14 @@ class AnkerMakeLightSensor(AnkerMakeBaseEntity, LightEntity):
             await turn_on_light(self.coordinator.config['host'])
             self._attr_is_on = True
         except AnkerUtilException as e:
-            _LOGGER.error(f"Failed to turn on light: {e}")
+            raise ServiceValidationError(e)
 
     async def async_turn_off(self, **kwargs):
         try:
             await turn_off_light(self.coordinator.config['host'])
             self._attr_is_on = False
         except AnkerUtilException as e:
-            _LOGGER.error(f"Failed to turn on light: {e}")
+            raise ServiceValidationError(e)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):

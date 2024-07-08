@@ -3,6 +3,8 @@
 [![Validation](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/hassfest.yml/badge.svg)](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/hassfest.yml)
 [![Tests](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/tests.yml/badge.svg)](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/tests.yml)
 [![Release](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/release.yml/badge.svg)](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/release.yml)
+![Downloads total](https://img.shields.io/github/downloads/sondregronas/ankermake-hass-component/total)
+![Downloads latest](https://img.shields.io/github/downloads/sondregronas/ankermake-hass-component/latest/total)
 
 Ever wanted a quick way to check the status of your AnkerMake M5 3D printer? This Home Assistant component allows you to
 do just that! It listens to the mqtt socket of an [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
