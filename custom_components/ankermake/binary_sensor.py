@@ -11,7 +11,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 
 from . import AnkerMakeBaseEntity
 from .const import DOMAIN, MANUFACTURER
-from .sensor_manifest import BINARY_SENSOR_DESCRIPTIONS
+from .sensor_manifest import BINARY_SENSOR_DESCRIPTIONS, BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +30,31 @@ class AnkerMakeBinarySensor(AnkerMakeBaseEntity, BinarySensorEntity):
             self._attr_available = False
 
 
+class AnkerMakeBinarySensorWithAttr(AnkerMakeBaseEntity, BinarySensorEntity):
+    def __init__(self, coordinator, description, dev_info, attrs):
+        super().__init__(coordinator, description, dev_info)
+        self.attrs = attrs.copy()
+        self._attr_extra_state_attributes = dict()
+
+    @callback
+    def _update_from_anker(self) -> None:
+        try:
+            state = getattr(self.coordinator.ankerdata, self.attrs['state'])
+            self._attr_is_on = state
+
+            for attr, key in self.attrs.items():
+                if attr == 'state':
+                    continue
+                self._attr_extra_state_attributes[attr] = getattr(self.coordinator.ankerdata, key)
+
+            if not self.coordinator.ankerdata.online:
+                self._attr_available = True
+            else:
+                self._attr_available = False
+        except (AttributeError, KeyError):
+            self._attr_available = False
+
+
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
     entities = []
@@ -40,5 +65,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     for description in BINARY_SENSOR_DESCRIPTIONS:
         entities.append(AnkerMakeBinarySensor(coordinator, description, dev_info))
+    for description, attributes in BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS:
+        entities.append(AnkerMakeBinarySensorWithAttr(coordinator, description, dev_info, attributes))
 
     async_add_entities(entities, True)

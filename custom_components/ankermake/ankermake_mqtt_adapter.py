@@ -56,7 +56,11 @@ class AnkerData:
     print_target_time: datetime = None
 
     motor_locked: bool = False
+
     ai_enabled: bool = False
+    ai_level: int = 0
+    ai_pause_print: bool = False
+    ai_data_collection: bool = False
 
     # TODO: Currently no message for filament type except for error messages (afaik). Currently derived from filename.
     filament: str = FilamentType.UNKNOWN.value
@@ -115,11 +119,13 @@ class AnkerData:
                                                               FILAMENT_DENSITY.get(FilamentType.PLA.value))
         return round(density, 2)
 
-    def _new_status_handler(self, new_status: AnkerStatus):
+    def _new_status_handler(self, new_status: AnkerStatus) -> AnkerStatus:
         """Handler for new status changes."""
+        status = new_status
+
         # If the status is the same as the old status, return
-        if new_status == self._old_status:
-            return
+        if status == self._old_status:
+            return status
 
         self._update_target_time()
 
@@ -127,11 +133,17 @@ class AnkerData:
         if self._old_status == AnkerStatus.ERROR:
             self._remove_error()
 
+        # If the printer is finished/idle and the new status is printing, it should be preheating first
+        # (it takes a while for the printer to send the preheating status on a new print job)
+        if self._old_status in [AnkerStatus.FINISHED, AnkerStatus.IDLE] and status == AnkerStatus.PRINTING:
+            status = AnkerStatus.PREHEATING
+
         # Reset the data if the status is one of the reset states
-        if new_status in RESET_STATES:
+        if status in RESET_STATES:
             self._reset()
 
-        self._old_status = new_status
+        self._old_status = status
+        return status
 
     @property
     def status(self) -> str:
@@ -155,8 +167,7 @@ class AnkerData:
         elif not self.printing:
             status = AnkerStatus.IDLE
 
-        self._new_status_handler(status)
-        return status.value
+        return self._new_status_handler(status).value
 
     def _update_target_time(self):
         """Should not call this too often (on state change / new print job)"""
@@ -220,7 +231,11 @@ class AnkerData:
                 self.remaining_time = _remaining_time
                 self.total_time = _elapsed_time + _remaining_time
 
-                self.ai_enabled = websocket_message.get("aiFlag") == 1
+                self.ai_enabled = max(websocket_message.get("aiFlag"),
+                                      websocket_message.get("AISwitch")) == 1
+                self.ai_level = websocket_message.get("AISensitivity")
+                self.ai_pause_print = websocket_message.get("AIPausePrint") == 1
+                self.ai_data_collection = websocket_message.get("AIJoinImproving") == 1
 
                 filament_used = websocket_message.get("filamentUsed") / 1000  # Get meters (from mm)
                 self.filament_used = round(filament_used, 2)

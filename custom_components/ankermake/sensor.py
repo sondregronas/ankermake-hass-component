@@ -67,8 +67,7 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
                 self._attr_available = True
             else:
                 self._attr_available = False
-        except (AttributeError, KeyError) as e:
-            _LOGGER.error(f"Failed to update {e}")
+        except (AttributeError, KeyError):
             self._attr_available = False
 
 

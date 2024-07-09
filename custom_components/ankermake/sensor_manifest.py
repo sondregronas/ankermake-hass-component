@@ -13,14 +13,6 @@ class Description(SensorEntityDescription):
 
 # Key must match the attribute in the AnkerData class
 BINARY_SENSOR_DESCRIPTIONS = [
-    # AI Enabled
-    Description(
-        key="ai_enabled",
-        name="AI Detection Enabled",
-        icon="mdi:brain",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        entity_registry_enabled_default=False,
-    ),
     # Motor Locked
     Description(
         key="motor_locked",
@@ -29,6 +21,24 @@ BINARY_SENSOR_DESCRIPTIONS = [
         device_class=BinarySensorDeviceClass.LOCK,
         entity_registry_enabled_default=False,
     ),
+]
+
+BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS = [
+    # AI Enabled
+    [Description(
+        key="ai_enabled",
+        name="AI Detection",
+        icon="mdi:brain",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,
+    ),
+        {
+            'state': 'ai_enabled',
+            'level': 'ai_level',
+            'pause_print': 'ai_pause_print',
+            'data_collection': 'ai_data_collection',
+        }
+    ],
 ]
 
 # Key must match the attribute in the AnkerData class
@@ -81,7 +91,7 @@ SENSOR_DESCRIPTIONS = [
     # Current Speed
     Description(
         key="current_speed",
-        name="Current Speed",
+        name="Speed",
         icon="mdi:speedometer",
         native_unit_of_measurement="mm/s",
         entity_registry_enabled_default=False,
@@ -105,7 +115,7 @@ SENSOR_DESCRIPTIONS = [
     # Current Layer
     Description(
         key="current_layer",
-        name="Current Layer",
+        name="Layer",
         icon="mdi:layers-triple",
         entity_registry_enabled_default=False,
     ),
