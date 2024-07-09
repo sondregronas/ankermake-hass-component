@@ -23,9 +23,9 @@ instance and updates the status of your printer in real-time.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=sondregronas&repository=ankermake-hass-component&category=ankermake)
 
-Download and install the component via hacs (alternatively copy the `custom_components/ankermake` folder to your Home
-Assistant config) and reboot. You will then be able to add the AnkerMake integration in the Home Assistant integrations
-page (or by clicking the badge below).
+Download and install the component via hacs (alternatively copy the contents of the latest release into
+`custom_components/ankermake` folder to your Home Assistant instance) and reboot, then add the integration via the
+Home Assistant UI by searching for "AnkerMake" or click the button below.
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ankermake)
 
