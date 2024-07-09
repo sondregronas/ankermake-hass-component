@@ -32,6 +32,55 @@ Home Assistant UI by searching for "AnkerMake" or click the button below.
 > Note: You can add as many instances as you'd like (but you will need an ankerctl instance configured for each
 > printer).
 
+## Adding a camera (WIP)
+
+<details>
+
+<summary>Click to expand!</summary>
+
+> NOTE: This might not work for you YET! Also it isn't the most reliable feed. See PR/Draft in
+> ankerctl: [here](https://github.com/Ankermgmt/ankermake-m5-protocol/pull/162)
+
+## Using go2rtc
+
+`go2rtc.yaml` (https://github.com/AlexxIT/go2rtc?tab=readme-ov-file#go2rtc-home-assistant-add-on)
+
+```yaml
+streams:
+  Anker:
+    - ffmpeg:http://ankerctl-ip:4470/video
+```
+
+<details>
+<summary>Alt: Frigate config</summary>
+
+Note: Frigate just runs go2rtc
+
+`config.yml`
+
+```yaml
+go2rtc:
+  streams:
+    Anker:
+      - "ffmpeg:http://ankerctl-ip:4470/video"
+```
+
+</details>
+
+## Lovelace Card (Home Assistant)
+
+Add WebRTC integration from HACS (https://github.com/AlexxIT/WebRTC?tab=readme-ov-file#installation)
+
+Use either `http://<go2rtc_ip>:1984` or `http://<frigate_ip>:1984` when configuring the integration, reboot and add
+a `Custom: WebRTC Camera` card to the dashboard:
+
+```yaml
+type: custom:webrtc-camera
+url: Anker
+```
+
+</details>
+
 ## Dependencies
 
 For this component to work, you will need an instance of [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
@@ -55,6 +104,7 @@ There are probably many issues to list...
 - There are (almost) no unit tests :(
 - Logging is pretty much non-existent, documentation is a bit lacking
 - ankerctl can crash sometimes, hindering the integration from working until it's restarted
+- The API isn't added to ankerctl yet (showing the service statuses, etc)
 
 ## Testing
 
