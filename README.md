@@ -29,13 +29,17 @@ Home Assistant UI by searching for "AnkerMake" or click the button below.
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ankermake)
 
-> Note: You can add as many instances as you'd like (but you will need an ankerctl instance running for each one).
+> Note: You can add as many instances as you'd like (but you will need an ankerctl instance configured for each
+> printer).
 
 ## Dependencies
 
 For this component to work, you will need an instance of [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
 running and working. Please refer to the ankerctl documentation for installation instructions. (They do have a Home
 Assistant add-on in their organization, but I have not tested it with this component).
+
+(The branch of ankerctl I'm
+using: https://github.com/sondregronas/ankermake-m5-protocol/tree/patch-exiles-1.1-auto-restart-on-failure)
 
 ## Known issues
 
@@ -51,7 +55,6 @@ There are probably many issues to list...
 - There are (almost) no unit tests :(
 - Logging is pretty much non-existent, documentation is a bit lacking
 - ankerctl can crash sometimes, hindering the integration from working until it's restarted
-- Not sure if multiple printers on one ankerctl instance will work, I doubt it.
 
 ## Testing
 

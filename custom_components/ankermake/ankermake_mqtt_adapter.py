@@ -28,7 +28,9 @@ RESET_STATES = [AnkerStatus.OFFLINE, AnkerStatus.IDLE]
 
 @dataclass
 class AnkerData:
-    _timezone: datetime.tzinfo = None
+    _timezone: datetime.tzinfo = None  # Defined in __init__.py
+    _api_status: dict = None  # Updated via __init__.py
+
     _last_heartbeat: datetime = None
     _status: AnkerStatus = AnkerStatus.OFFLINE
     _old_status: AnkerStatus = None
@@ -207,6 +209,24 @@ class AnkerData:
         """Removes the error from the AnkerData object, allowing the status to change."""
         self.error_message = ""
         self.error_level = ""
+
+    @property
+    def api_status(self) -> str:
+        return self._api_status.get('status', 'Offline').capitalize()
+
+    @staticmethod
+    def api_status_possible_states() -> list:
+        return ['Ok', 'Error', 'Offline']
+
+    @property
+    def api_service_possible_states(self) -> list:
+        return list(self._api_status.get('possible_states', {}).keys()) + ['Unavailable']
+
+    def get_api_service_status(self, service: str) -> str:
+        return self._api_status.get('services', {}).get(service, {}).get('state', 'Unavailable')
+
+    def get_api_service_online(self, service: str) -> bool:
+        return self._api_status.get('services', {}).get(service, {}).get('online', False)
 
     def update(self, websocket_message: dict):
         """Update the AnkerData object with a new message from the AnkerMake printer."""

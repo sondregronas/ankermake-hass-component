@@ -45,18 +45,21 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
 
     def _filter_handler(self, key: str):
         if key.startswith('%%TD='):
-            val = getattr(self.coordinator.ankerdata, key[5:])
+            val = getattr(self.coordinator.ankerdata, key.split('=')[1])
             return self.td_convert(val)
         elif key.startswith('='):
             return key[1:]
+        elif key.startswith('%SVC_ONLINE='):
+            return self.coordinator.ankerdata.get_api_service_online(key.split('=')[1])
+        elif key.startswith('%SVC_STATE='):
+            return self.coordinator.ankerdata.get_api_service_status(key.split('=')[1])
 
         return getattr(self.coordinator.ankerdata, key)
 
     @callback
     def _update_from_anker(self) -> None:
         try:
-            state = getattr(self.coordinator.ankerdata, self.attrs['state'])
-            self._attr_native_value = state
+            self._attr_native_value = self._filter_handler(self.attrs['state'])
 
             for attr, key in self.attrs.items():
                 if attr == 'state':

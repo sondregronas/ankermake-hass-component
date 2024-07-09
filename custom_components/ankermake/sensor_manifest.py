@@ -2,7 +2,7 @@ from homeassistant import const
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorEntityDescription, SensorDeviceClass
 
-from .ankermake_mqtt_adapter import AnkerStatus, FilamentType
+from .ankermake_mqtt_adapter import AnkerStatus, FilamentType, AnkerData
 
 
 # Linter is complaining without this class, it is strictly unnecessary
@@ -37,6 +37,62 @@ BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'level': 'ai_level',
             'pause_print': 'ai_pause_print',
             'data_collection': 'ai_data_collection',
+        }
+    ],
+    # Filetransfer service
+    [Description(
+        key="filetransfer_service",
+        name="Filetransfer Service",
+        icon="mdi:console",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+    ),
+        {
+            'state': '%SVC_ONLINE=filetransfer',
+            'status': '%SVC_STATE=filetransfer',
+            'possible_states': 'api_service_possible_states',
+        }
+    ],
+    # PPPPservice
+    [Description(
+        key="pppp_service",
+        name="PPPP Service",
+        icon="mdi:console",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+    ),
+        {
+            'state': '%SVC_ONLINE=pppp',
+            'status': '%SVC_STATE=pppp',
+            'possible_states': 'api_service_possible_states',
+        }
+    ],
+    # Videoqueue
+    [Description(
+        key="videoqueue_service",
+        name="Videoqueue Service",
+        icon="mdi:console",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+    ),
+        {
+            'state': '%SVC_ONLINE=videoqueue',
+            'status': '%SVC_STATE=videoqueue',
+            'possible_states': 'api_service_possible_states',
+        }
+    ],
+    # mqtt
+    [Description(
+        key="mqtt_service",
+        name="MQTT Service",
+        icon="mdi:console",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+    ),
+        {
+            'state': '%SVC_ONLINE=mqtt',
+            'status': '%SVC_STATE=mqtt',
+            'possible_states': 'api_service_possible_states',
         }
     ],
 ]
@@ -245,6 +301,28 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
         {
             'state': 'error_message',
             'error_level': 'error_level',
+        }
+    ],
+    # Ankerctl
+    [Description(
+        key="ankerctl",
+        name="Ankerctl",
+        icon="mdi:console",
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+        device_class='enum',
+        options=AnkerData.api_status_possible_states(),
+    ),
+        {
+            'state': 'api_status',
+            'pppp_service': '%SVC_STATE=pppp',
+            'pppp_online': '%SVC_ONLINE=pppp',
+            'filetransfer_service': '%SVC_STATE=filetransfer',
+            'filetransfer_online': '%SVC_ONLINE=filetransfer',
+            'videoqueue_service': '%SVC_STATE=videoqueue',
+            'videoqueue_online': '%SVC_ONLINE=videoqueue',
+            'mqtt_service': '%SVC_STATE=mqtt',
+            'mqtt_online': '%SVC_ONLINE=mqtt',
+            'possible_states': 'api_service_possible_states',
         }
     ],
 ]

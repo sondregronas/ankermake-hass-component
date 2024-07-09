@@ -23,6 +23,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 
 from .anker_models import AnkerException
+from .ankerctl_util import get_api_status
 from .ankermake_mqtt_adapter import AnkerData
 from .const import DOMAIN, STARTUP, UPDATE_FREQUENCY_SECONDS
 
@@ -101,10 +102,13 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
             await session.close()
 
     async def _async_update_data(self):
+        try:
+            self.ankerdata._api_status = await get_api_status(self.config['host'])
+        except AnkerException as e:
+            _LOGGER.debug(f"[AnkerMake] Error updating API data: {e}")
         # Ensure task is still running
         if self._listen_to_ws_task.done():
             self._listen_to_ws_task = asyncio.create_task(self._listen_to_ws())
-            await asyncio.sleep(5)  # If the task dies, wait 5 seconds before trying again
 
 
 class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):

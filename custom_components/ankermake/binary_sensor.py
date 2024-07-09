@@ -36,16 +36,22 @@ class AnkerMakeBinarySensorWithAttr(AnkerMakeBaseEntity, BinarySensorEntity):
         self.attrs = attrs.copy()
         self._attr_extra_state_attributes = dict()
 
+    def _filter_handler(self, key: str):
+        if key.startswith('%SVC_ONLINE='):
+            return self.coordinator.ankerdata.get_api_service_online(key.split('=')[1])
+        elif key.startswith('%SVC_STATE='):
+            return self.coordinator.ankerdata.get_api_service_status(key.split('=')[1])
+
+        return getattr(self.coordinator.ankerdata, key)
+
     @callback
     def _update_from_anker(self) -> None:
         try:
-            state = getattr(self.coordinator.ankerdata, self.attrs['state'])
-            self._attr_is_on = state
-
             for attr, key in self.attrs.items():
                 if attr == 'state':
+                    self._attr_is_on = self._filter_handler(key)
                     continue
-                self._attr_extra_state_attributes[attr] = getattr(self.coordinator.ankerdata, key)
+                self._attr_extra_state_attributes[attr] = self._filter_handler(key)
 
             if not self.coordinator.ankerdata.online:
                 self._attr_available = True
