@@ -51,6 +51,7 @@ There are probably many issues to list...
 - There are (almost) no unit tests :(
 - Logging is pretty much non-existent, documentation is a bit lacking
 - ankerctl can crash sometimes, hindering the integration from working until it's restarted
+- Not sure if multiple printers on one ankerctl instance will work, I doubt it.
 
 ## Testing
 
