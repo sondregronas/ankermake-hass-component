@@ -315,6 +315,11 @@ class AnkerData:
             case CommandTypes.TEMP_IS_LEVELED.value:
                 self.bed_leveled = websocket_message.get("isLeveled") == 1
 
+            # When the STOP button is pressed, this message is sent
+            case CommandTypes.TEMP_PRINT_STOPPED.value:
+                # Resetting for now, which will set state to IDLE
+                self._reset()
+
             # Errors (?)
             case CommandTypes.TEMP_ERROR_CODE.value:
                 self.error_level = websocket_message.get("errorLevel")
