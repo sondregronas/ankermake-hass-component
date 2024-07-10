@@ -24,10 +24,13 @@ class AnkerMakeImageSensor(AnkerMakeBaseEntity, ImageEntity):
     @callback
     def _update_from_anker(self) -> None:
         gcode_preview_url = self.coordinator.ankerdata.image
-        if gcode_preview_url != self._gcode_preview_url:
-            self._attr_image_last_updated = datetime.now()
+        is_new_image = gcode_preview_url != self._gcode_preview_url
+
         self._gcode_preview_url = gcode_preview_url
         self._attr_image_url = self._gcode_preview_url
+
+        if is_new_image:
+            self._attr_image_last_updated = datetime.now()
 
         if self.coordinator.ankerdata.online:
             self._attr_available = True
