@@ -34,7 +34,7 @@ jobs:
           zip -r ankermake.zip .
 
       - name: Upload release asset to the existing release
-        uses: svenstaro/upload-release-action@v1-release
+        uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: custom_components/ankermake/ankermake.zip
