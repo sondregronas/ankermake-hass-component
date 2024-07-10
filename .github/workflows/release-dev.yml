@@ -21,9 +21,7 @@ jobs:
 
       - name: Get tag from commit summary with abbreviated tag
         run: |
-          echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-          echo "tag=$(echo ${{ env.tag }} | awk -F. '{print $1"."$2+1"."$3"-0"}')" >> $GITHUB_ENV
-          echo "${{ env.tag }}"
+          echo "tag=$(git describe --tags --abbrev=0)-0" >> $GITHUB_ENV
 
       - name: Set version to release tag
         run: |
