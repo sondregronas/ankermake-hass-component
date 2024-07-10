@@ -24,7 +24,7 @@ jobs:
           tag=$(git describe --tags --abbrev=0)
           if [[ $tag != *"-0" ]]; then
             tag=$(echo $tag | grep -oP '\d+\.\d+\.\d+')
-            tag=$(echo $tag | awk -F. '{print $1"."$2+1"."$3"-0"}')
+            tag=$(echo $tag | awk -F. '{print $1"."$2+1".0-0"}')
           fi
           echo "tag=$tag" >> $GITHUB_ENV
 
