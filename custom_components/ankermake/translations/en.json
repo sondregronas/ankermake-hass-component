@@ -9,9 +9,6 @@
           "printer_name": "Your printers name"
         }
       }
-    },
-    "abort": {
-      "already_configured": "The specified host is already configured"
     }
   }
 }
