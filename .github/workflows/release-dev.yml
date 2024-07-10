@@ -1,0 +1,43 @@
+name: Release-Dev
+
+on:
+  push:
+    branches:
+      - dev
+
+permissions:
+  contents: write
+
+jobs:
+  hacs:
+    name: HACS Action
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Get tag from commit summary with abbreviated tag
+        run: |
+          echo "tag=$(git describe --tags --abbrev=0)-0" >> $GITHUB_ENV
+
+      - name: Set version to release tag
+        run: |
+          sed -i "s/GITHUB_RELEASE_VERSION/${{ env.tag }}/g" custom_components/ankermake/manifest.json
+          sed -i "s/GITHUB_RELEASE_VERSION/${{ env.tag }}/g" custom_components/ankermake/const.py
+
+      - name: Zip ankermake
+        run: |
+          cd custom_components/ankermake
+          zip -r ankermake.zip .
+
+      - name: Upload release asset to the existing release
+        uses: svenstaro/upload-release-action@v1-release
+        with:
+          repo_token: ${{ secrets.GH_TOKEN }}
+          asset_path: custom_components/ankermake/ankermake.zip
+          asset_name: ankermake.zip
+          tag: ${{ env.tag }}
+          overwrite: true
