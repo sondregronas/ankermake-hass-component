@@ -23,9 +23,8 @@ instance and updates the status of your printer in real-time.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=sondregronas&repository=ankermake-hass-component&category=ankermake)
 
-Download and install the component via hacs (alternatively copy the contents of the latest release into
-`custom_components/ankermake` folder to your Home Assistant instance) and reboot, then add the integration via the
-Home Assistant UI by searching for "AnkerMake" or click the button below.
+Download and install the component via hacs and reboot, then add the integration via the Home Assistant UI by searching
+for "AnkerMake" or click the button below.
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ankermake)
 
@@ -84,8 +83,15 @@ url: Anker
 ## Dependencies
 
 For this component to work, you will need an instance of [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
-running and working. Please refer to the ankerctl documentation for installation instructions. (They do have a Home
-Assistant add-on in their organization, but I have not tested it with this component).
+running and working. Please refer to the ankerctl documentation for installation instructions.
+
+**Alternatively you can try my fork of the ankerctl addon here: https://github.com/sondregronas/ankermgmt-hassio-addons
+** - which includes a lot of changes from exsting pull requests. I recommend you create an automation to restart the
+addon every 2 hours to avoid socket issues.
+
+[![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fsondregronas%2Fankermgmt-hassio-addons)
+
+> **NOTE:** This AddOn might not receive any updates when the main branch of ankerctl gets updated.
 
 (The branch of ankerctl I'm
 using: https://github.com/sondregronas/ankermake-m5-protocol/tree/patch-exiles-1.1-auto-restart-on-failure)
@@ -98,32 +104,32 @@ to restart every 2 hours as a workaround for some socket issues I've encountered
 
 ```yaml
 services:
-    ankerctl:
-        container_name: ankerctl
-        restart: unless-stopped
-        build: 
-          context: https://github.com/sondregronas/ankermake-m5-protocol.git#patch-exiles-1.1-auto-restart-on-failure
-        privileged: true
-        # host-mode networking is required for pppp communication with the
-        # printer, since it is an asymmetrical udp protocol.
-        network_mode: host
-        environment:
-            - FLASK_HOST=0.0.0.0
-            - FLASK_PORT=4470
-        volumes:
-            - ankerctl_vol:/root/.config/ankerctl
-            - ./ankermake-m5-protocol/web/:/app/web
+  ankerctl:
+    container_name: ankerctl
+    restart: unless-stopped
+    build:
+      context: https://github.com/sondregronas/ankermake-m5-protocol.git#patch-exiles-1.1-auto-restart-on-failure
+    privileged: true
+    # host-mode networking is required for pppp communication with the
+    # printer, since it is an asymmetrical udp protocol.
+    network_mode: host
+    environment:
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=4470
+    volumes:
+      - ankerctl_vol:/root/.config/ankerctl
+      - ./ankermake-m5-protocol/web/:/app/web
 
-    # This container will restart the ankerctl container every 2 hours
-    # as a temporary workaround for some socket issues.
-    ankerctl_restarter:
-      image: docker
-      volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
-      # 2 hours = 7200 seconds
-      command: ["/bin/sh", "-c", "while true; do sleep 7200; docker restart ankerctl; done"]
-      restart: unless-stopped
+  # This container will restart the ankerctl container every 2 hours
+  # as a temporary workaround for some socket issues.
+  ankerctl_restarter:
+    image: docker
+    volumes: [ "/var/run/docker.sock:/var/run/docker.sock" ]
+    # 2 hours = 7200 seconds
+    command: [ "/bin/sh", "-c", "while true; do sleep 7200; docker restart ankerctl; done" ]
+    restart: unless-stopped
 volumes:
-    ankerctl_vol:
+  ankerctl_vol:
 ```
 
 </details>
@@ -133,16 +139,14 @@ volumes:
 There are probably many issues to list...
 
 - Filament is just derived from the gcode name, which might not be accurate
-- There's probably an easier way to not poll the mqtt socket (requesting from the printer, right now it just listens on
-  a separate thread)
 - The state will be forgotten if home assistant restarts
-- Config flow will not verify the connection to the ankerctl instance (it will just assume it's correct)
 - No camera support (but can be worked around using go2rtc, though PPPP crashes a lot - stable when it doesn't crash!)
 - There are no ways to pause/stop a print
 - There are (almost) no unit tests :(
 - Logging is pretty much non-existent, documentation is a bit lacking
-- ankerctl can crash sometimes, hindering the integration from working until it's restarted
-- The API isn't added to ankerctl yet (showing the service statuses, etc)
+- ankerctl can crash sometimes, hindering the integration from working until it's restarted (restarting every 2hrs seems
+  to work well for me)
+- The API isn't added to the main branch of ankerctl yet (but it is in my fork - see above)
 
 ## Testing
 
