@@ -72,3 +72,19 @@ async def reload_ankerctl(host: str):
                     raise AnkerUtilException(f"Failed to reload ankerctl: {response.status}")
     except Exception as e:
         raise AnkerUtilException(f"Failed to reload ankerctl: {e}")
+
+
+async def get_api_status(host: str):
+    """Gets the status of the ankerctl api."""
+    url = host.replace("ws://", "http://").replace("wss://", "https://")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{url}/api/ankerctl/status") as response:
+                # TODO: Temporary if on the main branch of ankerctl
+                if response.status == 404:
+                    raise AnkerUtilException("Ankerctl API not found (not present in ankerctl yet)")
+                if response.status != 200:
+                    raise AnkerUtilException(f"Failed to get api status: {response.status}")
+                return await response.json()
+    except Exception as e:
+        raise AnkerUtilException(f"Failed to get api status: {e}")

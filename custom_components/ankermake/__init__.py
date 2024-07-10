@@ -23,6 +23,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
 
 from .anker_models import AnkerException
+from .ankerctl_util import get_api_status
 from .ankermake_mqtt_adapter import AnkerData
 from .const import DOMAIN, STARTUP, UPDATE_FREQUENCY_SECONDS
 
@@ -101,10 +102,13 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
             await session.close()
 
     async def _async_update_data(self):
+        try:
+            self.ankerdata._api_status = await get_api_status(self.config['host'])
+        except AnkerException as e:
+            _LOGGER.debug(f"[AnkerMake] Error updating API data: {e}")
         # Ensure task is still running
         if self._listen_to_ws_task.done():
             self._listen_to_ws_task = asyncio.create_task(self._listen_to_ws())
-            await asyncio.sleep(5)  # If the task dies, wait 5 seconds before trying again
 
 
 class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
@@ -115,7 +119,7 @@ class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
 
         self._attr_name = f"{device_info['name']} {description.name}"
         self.entity_description = description
-        self._attr_unique_id = description.key
+        self._attr_unique_id = f"{device_info['name']}_{description.key}"
         self._attr_device_info = device_info
 
     @property
@@ -129,3 +133,19 @@ class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
 
     def _update_from_anker(self) -> None:
         """Update the entity. (Used by sensor.py)"""
+
+    def _filter_handler(self, key: str):
+        def td_convert(seconds):
+            return str(timedelta(seconds=seconds))
+
+        if key.startswith('%%TD='):
+            val = getattr(self.coordinator.ankerdata, key.split('=')[1])
+            return td_convert(val)
+        elif key.startswith('='):
+            return key[1:]
+        elif key.startswith('%SVC_ONLINE='):
+            return self.coordinator.ankerdata.get_api_service_online(key.split('=')[1])
+        elif key.startswith('%SVC_STATE='):
+            return self.coordinator.ankerdata.get_api_service_status(key.split('=')[1])
+
+        return getattr(self.coordinator.ankerdata, key)

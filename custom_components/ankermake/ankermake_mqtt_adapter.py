@@ -28,7 +28,9 @@ RESET_STATES = [AnkerStatus.OFFLINE, AnkerStatus.IDLE]
 
 @dataclass
 class AnkerData:
-    _timezone: datetime.tzinfo = None
+    _timezone: datetime.tzinfo = None  # Defined in __init__.py
+    _api_status: dict = None  # Updated via __init__.py
+
     _last_heartbeat: datetime = None
     _status: AnkerStatus = AnkerStatus.OFFLINE
     _old_status: AnkerStatus = None
@@ -208,6 +210,16 @@ class AnkerData:
         self.error_message = ""
         self.error_level = ""
 
+    @property
+    def api_service_possible_states(self) -> list:
+        return list(self._api_status.get('possible_states', {}).keys()) + ['Unavailable']
+
+    def get_api_service_status(self, service: str) -> str:
+        return self._api_status.get('services', {}).get(service, {}).get('state', 'Unavailable')
+
+    def get_api_service_online(self, service: str) -> bool:
+        return self._api_status.get('services', {}).get(service, {}).get('online', False)
+
     def update(self, websocket_message: dict):
         """Update the AnkerData object with a new message from the AnkerMake printer."""
         command_type = websocket_message.get("commandType")
@@ -294,6 +306,11 @@ class AnkerData:
             # Auto-leveling sends a message with isLeveled: 1 (and presumably isLeveled: 0 when it's not leveled)
             case CommandTypes.TEMP_IS_LEVELED.value:
                 self.bed_leveled = websocket_message.get("isLeveled") == 1
+
+            # When the STOP button is pressed, this message is sent
+            case CommandTypes.TEMP_PRINT_STOPPED.value:
+                # Resetting for now, which will set state to IDLE
+                self._reset()
 
             # Errors (?)
             case CommandTypes.TEMP_ERROR_CODE.value:

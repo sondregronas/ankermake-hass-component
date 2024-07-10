@@ -2,7 +2,7 @@ from homeassistant import const
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorEntityDescription, SensorDeviceClass
 
-from .ankermake_mqtt_adapter import AnkerStatus, FilamentType
+from .ankermake_mqtt_adapter import AnkerStatus, FilamentType, AnkerData
 
 
 # Linter is complaining without this class, it is strictly unnecessary
@@ -37,6 +37,62 @@ BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'level': 'ai_level',
             'pause_print': 'ai_pause_print',
             'data_collection': 'ai_data_collection',
+        }
+    ],
+    # Filetransfer service
+    [Description(
+        key="service_filetransfer",
+        name="Filetransfer Service",
+        icon="mdi:console",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+    ),
+        {
+            'state': '%SVC_ONLINE=filetransfer',
+            'status': '%SVC_STATE=filetransfer',
+            'possible_states': 'api_service_possible_states',
+        }
+    ],
+    # PPPPservice
+    [Description(
+        key="service_pppp",
+        name="PPPP Service",
+        icon="mdi:console",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+    ),
+        {
+            'state': '%SVC_ONLINE=pppp',
+            'status': '%SVC_STATE=pppp',
+            'possible_states': 'api_service_possible_states',
+        }
+    ],
+    # Videoqueue
+    [Description(
+        key="service_videoqueue",
+        name="Videoqueue Service",
+        icon="mdi:console",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+    ),
+        {
+            'state': '%SVC_ONLINE=videoqueue',
+            'status': '%SVC_STATE=videoqueue',
+            'possible_states': 'api_service_possible_states',
+        }
+    ],
+    # mqtt
+    [Description(
+        key="service_mqtt",
+        name="MQTT Service",
+        icon="mdi:console",
+        device_class=BinarySensorDeviceClass.CONNECTIVITY,
+        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+    ),
+        {
+            'state': '%SVC_ONLINE=mqttqueue',
+            'status': '%SVC_STATE=mqttqueue',
+            'possible_states': 'api_service_possible_states',
         }
     ],
 ]

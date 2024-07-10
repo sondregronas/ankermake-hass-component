@@ -21,7 +21,7 @@ class AnkerMakeSensor(AnkerMakeBaseEntity, SensorEntity):
     @callback
     def _update_from_anker(self) -> None:
         try:
-            value = getattr(self.coordinator.ankerdata, self.entity_description.key)
+            value = self._filter_handler(self.entity_description.key)
             if self.coordinator.ankerdata.online:
                 self._attr_available = True
             else:
@@ -39,24 +39,10 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
         self.attrs = attrs.copy()
         self._attr_extra_state_attributes = dict()
 
-    @staticmethod
-    def td_convert(seconds):
-        return str(timedelta(seconds=seconds))
-
-    def _filter_handler(self, key: str):
-        if key.startswith('%%TD='):
-            val = getattr(self.coordinator.ankerdata, key[5:])
-            return self.td_convert(val)
-        elif key.startswith('='):
-            return key[1:]
-
-        return getattr(self.coordinator.ankerdata, key)
-
     @callback
     def _update_from_anker(self) -> None:
         try:
-            state = getattr(self.coordinator.ankerdata, self.attrs['state'])
-            self._attr_native_value = state
+            self._attr_native_value = self._filter_handler(self.attrs['state'])
 
             for attr, key in self.attrs.items():
                 if attr == 'state':

@@ -29,13 +29,104 @@ Home Assistant UI by searching for "AnkerMake" or click the button below.
 
 [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ankermake)
 
-> Note: You can add as many instances as you'd like (but you will need an ankerctl instance running for each one).
+> Note: You can add as many instances as you'd like (but you will need an ankerctl instance configured for each
+> printer).
+
+## Adding a camera (WIP)
+
+<details>
+
+<summary>Click to expand!</summary>
+
+> NOTE: This might not work for you YET! Also it isn't the most reliable feed. See PR/Draft in
+> ankerctl: [here](https://github.com/Ankermgmt/ankermake-m5-protocol/pull/162)
+
+## Using go2rtc
+
+`go2rtc.yaml` (https://github.com/AlexxIT/go2rtc?tab=readme-ov-file#go2rtc-home-assistant-add-on)
+
+```yaml
+streams:
+  Anker:
+    - ffmpeg:http://ankerctl-ip:4470/video
+```
+
+<details>
+<summary>Alt: Frigate config</summary>
+
+Note: Frigate just runs go2rtc
+
+`config.yml`
+
+```yaml
+go2rtc:
+  streams:
+    Anker:
+      - "ffmpeg:http://ankerctl-ip:4470/video"
+```
+
+</details>
+
+## Lovelace Card (Home Assistant)
+
+Add WebRTC integration from HACS (https://github.com/AlexxIT/WebRTC?tab=readme-ov-file#installation)
+
+Use either `http://<go2rtc_ip>:1984` or `http://<frigate_ip>:1984` when configuring the integration, reboot and add
+a `Custom: WebRTC Camera` card to the dashboard:
+
+```yaml
+type: custom:webrtc-camera
+url: Anker
+```
+
+</details>
 
 ## Dependencies
 
 For this component to work, you will need an instance of [ankerctl](https://github.com/Ankermgmt/ankermake-m5-protocol)
 running and working. Please refer to the ankerctl documentation for installation instructions. (They do have a Home
 Assistant add-on in their organization, but I have not tested it with this component).
+
+(The branch of ankerctl I'm
+using: https://github.com/sondregronas/ankermake-m5-protocol/tree/patch-exiles-1.1-auto-restart-on-failure)
+
+<details>
+<summary>Click here for a docker-compose setup</summary>
+
+You can use this `docker-compose.yml` file to start an instance of my fork of ankerctl. Note that the container is set
+to restart every 2 hours as a workaround for some socket issues I've encountered, but isn't strictly necessary.
+
+```yaml
+services:
+    ankerctl:
+        container_name: ankerctl
+        restart: unless-stopped
+        build: 
+          context: https://github.com/sondregronas/ankermake-m5-protocol.git#patch-exiles-1.1-auto-restart-on-failure
+        privileged: true
+        # host-mode networking is required for pppp communication with the
+        # printer, since it is an asymmetrical udp protocol.
+        network_mode: host
+        environment:
+            - FLASK_HOST=0.0.0.0
+            - FLASK_PORT=4470
+        volumes:
+            - ankerctl_vol:/root/.config/ankerctl
+            - ./ankermake-m5-protocol/web/:/app/web
+
+    # This container will restart the ankerctl container every 2 hours
+    # as a temporary workaround for some socket issues.
+    ankerctl_restarter:
+      image: docker
+      volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
+      # 2 hours = 7200 seconds
+      command: ["/bin/sh", "-c", "while true; do sleep 7200; docker restart ankerctl; done"]
+      restart: unless-stopped
+volumes:
+    ankerctl_vol:
+```
+
+</details>
 
 ## Known issues
 
@@ -51,6 +142,7 @@ There are probably many issues to list...
 - There are (almost) no unit tests :(
 - Logging is pretty much non-existent, documentation is a bit lacking
 - ankerctl can crash sometimes, hindering the integration from working until it's restarted
+- The API isn't added to ankerctl yet (showing the service statuses, etc)
 
 ## Testing
 

@@ -63,6 +63,7 @@ class CommandTypes(Enum):
     ZZ_MQTT_CMD_AI_INFO_CHECK = 1051  # Not used
     ZZ_MQTT_CMD_MODEL_LAYER = 1052
     TEMP_MAX_PRINT_SPEED = 1055  # max_print_speed: 500
+    TEMP_PRINT_STOPPED = 1068  # {'name': 'name', 'img': 'url', 'totalTime': 0, 'filamentUsed': 0, 'filamentUnit': 'mm', 'saveTime': 0, 'trigger': 2})
     UNKNOWN_1081 = 1081  # Not used
     UNKNOWN_1084 = 1084  # Not used
     TEMP_IS_LEVELED = 1072  # isLeveled: 1
