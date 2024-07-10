@@ -119,7 +119,7 @@ class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
 
         self._attr_name = f"{device_info['name']} {description.name}"
         self.entity_description = description
-        self._attr_unique_id = description.key
+        self._attr_unique_id = f"{device_info['name']}_{description.key}"
         self._attr_device_info = device_info
 
     @property
@@ -133,3 +133,19 @@ class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
 
     def _update_from_anker(self) -> None:
         """Update the entity. (Used by sensor.py)"""
+
+    def _filter_handler(self, key: str):
+        def td_convert(seconds):
+            return str(timedelta(seconds=seconds))
+
+        if key.startswith('%%TD='):
+            val = getattr(self.coordinator.ankerdata, key.split('=')[1])
+            return td_convert(val)
+        elif key.startswith('='):
+            return key[1:]
+        elif key.startswith('%SVC_ONLINE='):
+            return self.coordinator.ankerdata.get_api_service_online(key.split('=')[1])
+        elif key.startswith('%SVC_STATE='):
+            return self.coordinator.ankerdata.get_api_service_status(key.split('=')[1])
+
+        return getattr(self.coordinator.ankerdata, key)

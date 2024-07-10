@@ -21,7 +21,7 @@ class AnkerMakeSensor(AnkerMakeBaseEntity, SensorEntity):
     @callback
     def _update_from_anker(self) -> None:
         try:
-            value = getattr(self.coordinator.ankerdata, self.entity_description.key)
+            value = self._filter_handler(self.entity_description.key)
             if self.coordinator.ankerdata.online:
                 self._attr_available = True
             else:
@@ -38,23 +38,6 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
         super().__init__(coordinator, description, dev_info)
         self.attrs = attrs.copy()
         self._attr_extra_state_attributes = dict()
-
-    @staticmethod
-    def td_convert(seconds):
-        return str(timedelta(seconds=seconds))
-
-    def _filter_handler(self, key: str):
-        if key.startswith('%%TD='):
-            val = getattr(self.coordinator.ankerdata, key.split('=')[1])
-            return self.td_convert(val)
-        elif key.startswith('='):
-            return key[1:]
-        elif key.startswith('%SVC_ONLINE='):
-            return self.coordinator.ankerdata.get_api_service_online(key.split('=')[1])
-        elif key.startswith('%SVC_STATE='):
-            return self.coordinator.ankerdata.get_api_service_status(key.split('=')[1])
-
-        return getattr(self.coordinator.ankerdata, key)
 
     @callback
     def _update_from_anker(self) -> None:
