@@ -211,14 +211,6 @@ class AnkerData:
         self.error_level = ""
 
     @property
-    def api_status(self) -> str:
-        return self._api_status.get('status', 'Offline').capitalize()
-
-    @staticmethod
-    def api_status_possible_states() -> list:
-        return ['Ok', 'Error', 'Offline']
-
-    @property
     def api_service_possible_states(self) -> list:
         return list(self._api_status.get('possible_states', {}).keys()) + ['Unavailable']
 

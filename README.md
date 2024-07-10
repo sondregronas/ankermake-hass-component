@@ -90,6 +90,44 @@ Assistant add-on in their organization, but I have not tested it with this compo
 (The branch of ankerctl I'm
 using: https://github.com/sondregronas/ankermake-m5-protocol/tree/patch-exiles-1.1-auto-restart-on-failure)
 
+<details>
+<summary>Click here for a docker-compose setup</summary>
+
+You can use this `docker-compose.yml` file to start an instance of my fork of ankerctl. Note that the container is set
+to restart every 2 hours as a workaround for some socket issues I've encountered, but isn't strictly necessary.
+
+```yaml
+services:
+    ankerctl:
+        container_name: ankerctl
+        restart: unless-stopped
+        build: 
+          context: https://github.com/sondregronas/ankermake-m5-protocol.git#patch-exiles-1.1-auto-restart-on-failure
+        privileged: true
+        # host-mode networking is required for pppp communication with the
+        # printer, since it is an asymmetrical udp protocol.
+        network_mode: host
+        environment:
+            - FLASK_HOST=0.0.0.0
+            - FLASK_PORT=4470
+        volumes:
+            - ankerctl_vol:/root/.config/ankerctl
+            - ./ankermake-m5-protocol/web/:/app/web
+
+    # This container will restart the ankerctl container every 2 hours
+    # as a temporary workaround for some socket issues.
+    ankerctl_restarter:
+      image: docker
+      volumes: ["/var/run/docker.sock:/var/run/docker.sock"]
+      # 2 hours = 7200 seconds
+      command: ["/bin/sh", "-c", "while true; do sleep 7200; docker restart ankerctl; done"]
+      restart: unless-stopped
+volumes:
+    ankerctl_vol:
+```
+
+</details>
+
 ## Known issues
 
 There are probably many issues to list...

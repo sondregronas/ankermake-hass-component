@@ -41,7 +41,7 @@ BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS = [
     ],
     # Filetransfer service
     [Description(
-        key="filetransfer_service",
+        key="service_filetransfer",
         name="Filetransfer Service",
         icon="mdi:console",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
@@ -55,7 +55,7 @@ BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS = [
     ],
     # PPPPservice
     [Description(
-        key="pppp_service",
+        key="service_pppp",
         name="PPPP Service",
         icon="mdi:console",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
@@ -69,7 +69,7 @@ BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS = [
     ],
     # Videoqueue
     [Description(
-        key="videoqueue_service",
+        key="service_videoqueue",
         name="Videoqueue Service",
         icon="mdi:console",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
@@ -83,15 +83,15 @@ BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS = [
     ],
     # mqtt
     [Description(
-        key="mqtt_service",
+        key="service_mqtt",
         name="MQTT Service",
         icon="mdi:console",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
         entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
     ),
         {
-            'state': '%SVC_ONLINE=mqtt',
-            'status': '%SVC_STATE=mqtt',
+            'state': '%SVC_ONLINE=mqttqueue',
+            'status': '%SVC_STATE=mqttqueue',
             'possible_states': 'api_service_possible_states',
         }
     ],
@@ -301,28 +301,6 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
         {
             'state': 'error_message',
             'error_level': 'error_level',
-        }
-    ],
-    # Ankerctl
-    [Description(
-        key="ankerctl",
-        name="Ankerctl",
-        icon="mdi:console",
-        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
-        device_class='enum',
-        options=AnkerData.api_status_possible_states(),
-    ),
-        {
-            'state': 'api_status',
-            'pppp_service': '%SVC_STATE=pppp',
-            'pppp_online': '%SVC_ONLINE=pppp',
-            'filetransfer_service': '%SVC_STATE=filetransfer',
-            'filetransfer_online': '%SVC_ONLINE=filetransfer',
-            'videoqueue_service': '%SVC_STATE=videoqueue',
-            'videoqueue_online': '%SVC_ONLINE=videoqueue',
-            'mqtt_service': '%SVC_STATE=mqtt',
-            'mqtt_online': '%SVC_ONLINE=mqtt',
-            'possible_states': 'api_service_possible_states',
         }
     ],
 ]
