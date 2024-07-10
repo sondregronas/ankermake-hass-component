@@ -37,7 +37,7 @@ jobs:
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GH_TOKEN }}
-          asset_path: custom_components/ankermake/ankermake.zip
+          file: custom_components/ankermake/ankermake.zip
           asset_name: ankermake.zip
           tag: ${{ env.tag }}
           overwrite: true
