@@ -147,6 +147,8 @@ class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
             return self.coordinator.ankerdata.get_api_service_online(key.split('=')[1])
         elif key.startswith('%SVC_STATE='):
             return self.coordinator.ankerdata.get_api_service_status(key.split('=')[1])
+        elif key.startswith('%VERSION='):
+            return self.coordinator.ankerdata.get_api_version_value(key.split('=')[1])
         elif key.startswith('%CFG='):
             return self.coordinator.config[key.split('=')[1]]
 

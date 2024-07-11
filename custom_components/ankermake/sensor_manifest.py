@@ -222,6 +222,8 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'error_level': 'error_level',
             'config_host': '%CFG=host',
             'config_name': '%CFG=printer_name',
+            'api_version': '%VERSION=api',
+            'octoprint_version': '%VERSION=server',
         }
     ],
     # Hotend Sensor

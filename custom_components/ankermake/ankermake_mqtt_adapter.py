@@ -214,6 +214,9 @@ class AnkerData:
     def api_service_possible_states(self) -> list:
         return list(self._api_status.get('possible_states', {}).keys()) + ['Unavailable']
 
+    def get_api_version_value(self, key: str) -> str:
+        return self._api_status.get('version', {}).get(key, 'Unavailable')
+
     def get_api_service_status(self, service: str) -> str:
         return self._api_status.get('services', {}).get(service, {}).get('state', 'Unavailable')
 
