@@ -2,7 +2,7 @@ from homeassistant import const
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorEntityDescription, SensorDeviceClass
 
-from .ankermake_mqtt_adapter import AnkerStatus, FilamentType, AnkerData
+from .ankermake_mqtt_adapter import AnkerStatus, FilamentType
 
 
 # Linter is complaining without this class, it is strictly unnecessary
@@ -220,6 +220,8 @@ SENSOR_WITH_ATTR_DESCRIPTIONS = [
             'motor_locked': 'motor_locked',
             'error_message': 'error_message',
             'error_level': 'error_level',
+            'config_host': '%CFG=host',
+            'config_name': '%CFG=printer_name',
         }
     ],
     # Hotend Sensor
