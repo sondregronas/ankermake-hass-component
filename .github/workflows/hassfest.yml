@@ -3,6 +3,7 @@ name: Validate
 on:
   push:
   pull_request:
+  workflow_dispatch:
   schedule:
     - cron: '0 0 * * *'
 
@@ -22,5 +23,5 @@ jobs:
         run: |
           sed -i "s/GITHUB_RELEASE_VERSION/${{ env.tag }}/g" custom_components/ankermake/manifest.json
           sed -i "s/GITHUB_RELEASE_VERSION/${{ env.tag }}/g" custom_components/ankermake/const.py
-          
+
       - uses: "home-assistant/actions/hassfest@master"
