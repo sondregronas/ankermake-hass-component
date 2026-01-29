@@ -45,7 +45,9 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up integration."""
     if DOMAIN in hass.data:
-        _LOGGER.info("Delete ankermake from your yaml")
+        _LOGGER.info(
+            "Please delete ankermake from your configuration.yaml as it needs to be configured via the UI."
+        )
     return True
 
 
@@ -56,7 +58,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug("Setting up entry %s: %s", entry.entry_id, entry.data)
 
     tz = await hass.async_add_executor_job(pytz.timezone, hass.config.time_zone)
-    coordinator = AnkerMakeUpdateCoordinator(hass, entry=entry, tz=tz)
+    coordinator = AnkerMakeUpdateCoordinator(
+        hass,
+        entry=entry,
+        tz=tz,
+    )
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})

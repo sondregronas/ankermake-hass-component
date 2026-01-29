@@ -29,7 +29,13 @@ class AnkerMakeFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: ConfigType = None):
         # If the user input is empty, show the form
         if not user_input:
-            return self.async_show_form(step_id="user", data_schema=VOL_SCHEME)
+            return self.async_show_form(
+                step_id="user",
+                data_schema=VOL_SCHEME,
+                description_placeholders={
+                    "ankerctl_url": "https://github.com/Ankermgmt/ankermake-m5-protocol"
+                },
+            )
 
         def retry_input(msg):
             vol_scheme = vol.Schema(
@@ -41,7 +47,12 @@ class AnkerMakeFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 }
             )
             return self.async_show_form(
-                step_id="user", data_schema=vol_scheme, errors={"base": msg}
+                step_id="user",
+                data_schema=vol_scheme,
+                errors={"base": msg},
+                description_placeholders={
+                    "ankerctl_url": "https://github.com/Ankermgmt/ankermake-m5-protocol"
+                },
             )
 
         # Replace http(s) with ws(s)
