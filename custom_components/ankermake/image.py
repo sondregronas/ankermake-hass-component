@@ -16,8 +16,10 @@ _LOGGER = logging.getLogger(__name__)
 class AnkerMakeImageSensor(AnkerMakeBaseEntity, ImageEntity):
     def __init__(self, coordinator, description, dev_info, hass: HomeAssistant):
         super().__init__(coordinator, description, dev_info)
-        self._gcode_preview_url = ''
-        self._placeholder_path = hass.config.path('./custom_components/ankermake/assets/placeholder_gcode.png')
+        self._gcode_preview_url = ""
+        self._placeholder_path = hass.config.path(
+            "./custom_components/ankermake/assets/placeholder_gcode.png"
+        )
         ImageEntity.__init__(self, hass=hass)
         self._attr_image_last_updated = datetime.now()
 
@@ -40,7 +42,9 @@ class AnkerMakeImageSensor(AnkerMakeBaseEntity, ImageEntity):
     async def async_image(self) -> bytes | None:
         """Return image bytes."""
         if not self._gcode_preview_url:
-            return await self.hass.async_add_executor_job(lambda: open(self._placeholder_path, 'rb').read())
+            return await self.hass.async_add_executor_job(
+                lambda: open(self._placeholder_path, "rb").read()
+            )
         async with aiohttp.ClientSession() as session:
             async with session.get(self._gcode_preview_url) as response:
                 return await response.read()
@@ -48,14 +52,11 @@ class AnkerMakeImageSensor(AnkerMakeBaseEntity, ImageEntity):
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    description = Description(
-        key="gcode_preview",
-        name="Gcode Image",
-        icon="mdi:image"
-    )
+    description = Description(key="gcode_preview", name="Gcode Image", icon="mdi:image")
     dev_info = DeviceInfo(
         manufacturer=MANUFACTURER,
         identifiers={(DOMAIN, entry.entry_id)},
-        name=coordinator.config["printer_name"])
+        name=coordinator.config["printer_name"],
+    )
     entity = AnkerMakeImageSensor(coordinator, description, dev_info, hass=hass)
     async_add_entities([entity], True)

@@ -1,9 +1,9 @@
-NAME = 'AnkerMake'
-VERSION = 'GITHUB_RELEASE_VERSION'
-ISSUEURL = 'https://github.com/sondregronas/ankermake-hass-component/issues'
+NAME = "AnkerMake"
+VERSION = "GITHUB_RELEASE_VERSION"
+ISSUEURL = "https://github.com/sondregronas/ankermake-hass-component/issues"
 
-DOMAIN = 'ankermake'
-MANUFACTURER = 'Anker'
+DOMAIN = "ankermake"
+MANUFACTURER = "Anker"
 
 STARTUP = f"""
 -------------------------------------------------------------------

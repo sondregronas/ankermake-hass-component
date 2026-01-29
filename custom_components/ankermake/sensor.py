@@ -42,10 +42,10 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
     @callback
     def _update_from_anker(self) -> None:
         try:
-            self._attr_native_value = self._filter_handler(self.attrs['state'])
+            self._attr_native_value = self._filter_handler(self.attrs["state"])
 
             for attr, key in self.attrs.items():
-                if attr == 'state':
+                if attr == "state":
                     continue
                 self._attr_extra_state_attributes[attr] = self._filter_handler(key)
 
@@ -63,11 +63,14 @@ async def async_setup_entry(hass, entry, async_add_entities):
     dev_info = DeviceInfo(
         manufacturer=MANUFACTURER,
         identifiers={(DOMAIN, entry.entry_id)},
-        name=coordinator.config["printer_name"])
+        name=coordinator.config["printer_name"],
+    )
 
     for description in SENSOR_DESCRIPTIONS:
         entities.append(AnkerMakeSensor(coordinator, description, dev_info))
     for description, attributes in SENSOR_WITH_ATTR_DESCRIPTIONS:
-        entities.append(AnkerMakeSensorWithAttr(coordinator, description, dev_info, attributes))
+        entities.append(
+            AnkerMakeSensorWithAttr(coordinator, description, dev_info, attributes)
+        )
 
     async_add_entities(entities, True)
