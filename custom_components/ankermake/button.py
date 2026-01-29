@@ -27,7 +27,7 @@ class AnkerMakeButtonSensor(AnkerMakeBaseEntity, ButtonEntity):
 
     async def async_press(self) -> None:
         try:
-            await reload_ankerctl(self.coordinator.config['host'])
+            await reload_ankerctl(self.coordinator.config["host"])
         except AnkerUtilException as e:
             raise ServiceValidationError(e)
 
@@ -42,6 +42,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
     dev_info = DeviceInfo(
         manufacturer=MANUFACTURER,
         identifiers={(DOMAIN, entry.entry_id)},
-        name=coordinator.config["printer_name"])
+        name=coordinator.config["printer_name"],
+    )
     entity = AnkerMakeButtonSensor(coordinator, description, dev_info)
     async_add_entities([entity], True)

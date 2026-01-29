@@ -17,16 +17,19 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: dev
+          ref: main
 
       - name: Get tag from commit summary with abbreviated tag
         run: |
           tag=$(git describe --tags --abbrev=0)
           if [[ $tag != *"-0" ]]; then
             tag=$(echo $tag | grep -oP '\d+\.\d+\.\d+')
-            tag=$(echo $tag | awk -F. '{print $1"."$2+1"."$3"-0"}')
+            tag=$(echo $tag | awk -F. '{print $1"."$2+1".0-0"}')
           fi
           echo "tag=$tag" >> $GITHUB_ENV
+
+      - name: Go to the dev branch
+        run: git checkout dev
 
       - name: Set version to release tag
         run: |

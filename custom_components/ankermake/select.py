@@ -30,7 +30,9 @@ class AnkerMakeSelectSensor(AnkerMakeBaseEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         try:
-            await set_video_quality(self.coordinator.config['host'], VideoQuality.__members__[option])
+            await set_video_quality(
+                self.coordinator.config["host"], VideoQuality.__members__[option]
+            )
             self._attr_current_option = option
         except AnkerUtilException as e:
             raise ServiceValidationError(e)
@@ -42,11 +44,12 @@ async def async_setup_entry(hass, entry, async_add_entities):
         key="quality",
         name="Video Quality",
         icon="mdi:quality-high",
-        entity_registry_enabled_default=False
+        entity_registry_enabled_default=False,
     )
     dev_info = DeviceInfo(
         manufacturer=MANUFACTURER,
         identifiers={(DOMAIN, entry.entry_id)},
-        name=coordinator.config["printer_name"])
+        name=coordinator.config["printer_name"],
+    )
     entity = AnkerMakeSelectSensor(coordinator, description, dev_info)
     async_add_entities([entity], True)

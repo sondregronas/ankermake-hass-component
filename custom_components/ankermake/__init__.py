@@ -20,7 +20,10 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import DeviceInfo, EntityDescription
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, CoordinatorEntity
+from homeassistant.helpers.update_coordinator import (
+    DataUpdateCoordinator,
+    CoordinatorEntity,
+)
 
 from .anker_models import AnkerException
 from .ankerctl_util import get_api_status
@@ -33,7 +36,7 @@ PLATFORMS = [
     Platform.LIGHT,
     Platform.SELECT,
     Platform.IMAGE,
-    Platform.BUTTON
+    Platform.BUTTON,
 ]
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,7 +45,9 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up integration."""
     if DOMAIN in hass.data:
-        _LOGGER.info("Delete ankermake from your yaml")
+        _LOGGER.info(
+            "Please delete ankermake from your configuration.yaml as it needs to be configured via the UI."
+        )
     return True
 
 
@@ -56,7 +61,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = AnkerMakeUpdateCoordinator(
         hass,
         entry=entry,
-        tz=tz
+        tz=tz,
     )
     await coordinator.async_config_entry_first_refresh()
 
@@ -70,8 +75,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, tz: datetime.tzinfo = None):
-        super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=timedelta(seconds=UPDATE_FREQUENCY_SECONDS))
+    def __init__(
+        self, hass: HomeAssistant, entry: ConfigEntry, tz: datetime.tzinfo = None
+    ):
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(seconds=UPDATE_FREQUENCY_SECONDS),
+        )
 
         self.config = entry.data
         self.ankerdata = AnkerData(_timezone=tz)
@@ -84,7 +96,9 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
             try:
                 self.ankerdata.update(message)
             except AnkerException:
-                _LOGGER.error(f"[AnkerMake] Error updating data (Received message: {message})")
+                _LOGGER.error(
+                    f"[AnkerMake] Error updating data (Received message: {message})"
+                )
 
         session = aiohttp.ClientSession()
         try:
@@ -103,7 +117,7 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
 
     async def _async_update_data(self):
         try:
-            self.ankerdata._api_status = await get_api_status(self.config['host'])
+            self.ankerdata._api_status = await get_api_status(self.config["host"])
         except AnkerException as e:
             _LOGGER.debug(f"[AnkerMake] Error updating API data: {e}")
         # Ensure task is still running
@@ -112,8 +126,12 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
 
 
 class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
-    def __init__(self, coordinator: AnkerMakeUpdateCoordinator,
-                 description: EntityDescription, device_info: DeviceInfo):
+    def __init__(
+        self,
+        coordinator: AnkerMakeUpdateCoordinator,
+        description: EntityDescription,
+        device_info: DeviceInfo,
+    ):
         super().__init__(coordinator)
         self.coordinator = coordinator
 
@@ -138,14 +156,18 @@ class AnkerMakeBaseEntity(CoordinatorEntity[AnkerMakeUpdateCoordinator]):
         def td_convert(seconds):
             return str(timedelta(seconds=seconds))
 
-        if key.startswith('%%TD='):
-            val = getattr(self.coordinator.ankerdata, key.split('=')[1])
+        if key.startswith("%%TD="):
+            val = getattr(self.coordinator.ankerdata, key.split("=")[1])
             return td_convert(val)
-        elif key.startswith('='):
+        elif key.startswith("="):
             return key[1:]
-        elif key.startswith('%SVC_ONLINE='):
-            return self.coordinator.ankerdata.get_api_service_online(key.split('=')[1])
-        elif key.startswith('%SVC_STATE='):
-            return self.coordinator.ankerdata.get_api_service_status(key.split('=')[1])
+        elif key.startswith("%SVC_ONLINE="):
+            return self.coordinator.ankerdata.get_api_service_online(key.split("=")[1])
+        elif key.startswith("%SVC_STATE="):
+            return self.coordinator.ankerdata.get_api_service_status(key.split("=")[1])
+        elif key.startswith("%VERSION="):
+            return self.coordinator.ankerdata.get_api_version_value(key.split("=")[1])
+        elif key.startswith("%CFG="):
+            return self.coordinator.config[key.split("=")[1]]
 
         return getattr(self.coordinator.ankerdata, key)

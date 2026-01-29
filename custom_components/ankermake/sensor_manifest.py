@@ -2,7 +2,7 @@ from homeassistant import const
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorEntityDescription, SensorDeviceClass
 
-from .ankermake_mqtt_adapter import AnkerStatus, FilamentType, AnkerData
+from .ankermake_mqtt_adapter import AnkerStatus, FilamentType
 
 
 # Linter is complaining without this class, it is strictly unnecessary
@@ -25,75 +25,80 @@ BINARY_SENSOR_DESCRIPTIONS = [
 
 BINARY_SENSOR_WITH_ATTR_DESCRIPTIONS = [
     # AI Enabled
-    [Description(
-        key="ai_enabled",
-        name="AI Detection",
-        icon="mdi:brain",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        entity_registry_enabled_default=False,
-    ),
+    [
+        Description(
+            key="ai_enabled",
+            name="AI Detection",
+            icon="mdi:brain",
+            device_class=BinarySensorDeviceClass.CONNECTIVITY,
+            entity_registry_enabled_default=False,
+        ),
         {
-            'state': 'ai_enabled',
-            'level': 'ai_level',
-            'pause_print': 'ai_pause_print',
-            'data_collection': 'ai_data_collection',
-        }
+            "state": "ai_enabled",
+            "level": "ai_level",
+            "pause_print": "ai_pause_print",
+            "data_collection": "ai_data_collection",
+        },
     ],
     # Filetransfer service
-    [Description(
-        key="service_filetransfer",
-        name="Filetransfer Service",
-        icon="mdi:console",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
-    ),
+    [
+        Description(
+            key="service_filetransfer",
+            name="Filetransfer Service",
+            icon="mdi:console",
+            device_class=BinarySensorDeviceClass.CONNECTIVITY,
+            entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+        ),
         {
-            'state': '%SVC_ONLINE=filetransfer',
-            'status': '%SVC_STATE=filetransfer',
-            'possible_states': 'api_service_possible_states',
-        }
+            "state": "%SVC_ONLINE=filetransfer",
+            "status": "%SVC_STATE=filetransfer",
+            "possible_states": "api_service_possible_states",
+        },
     ],
     # PPPPservice
-    [Description(
-        key="service_pppp",
-        name="PPPP Service",
-        icon="mdi:console",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
-    ),
+    [
+        Description(
+            key="service_pppp",
+            name="PPPP Service",
+            icon="mdi:console",
+            device_class=BinarySensorDeviceClass.CONNECTIVITY,
+            entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+        ),
         {
-            'state': '%SVC_ONLINE=pppp',
-            'status': '%SVC_STATE=pppp',
-            'possible_states': 'api_service_possible_states',
-        }
+            "state": "%SVC_ONLINE=pppp",
+            "status": "%SVC_STATE=pppp",
+            "possible_states": "api_service_possible_states",
+        },
     ],
     # Videoqueue
-    [Description(
-        key="service_videoqueue",
-        name="Videoqueue Service",
-        icon="mdi:console",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
-    ),
+    [
+        Description(
+            key="service_videoqueue",
+            name="Videoqueue Service",
+            icon="mdi:console",
+            device_class=BinarySensorDeviceClass.CONNECTIVITY,
+            entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+        ),
         {
-            'state': '%SVC_ONLINE=videoqueue',
-            'status': '%SVC_STATE=videoqueue',
-            'possible_states': 'api_service_possible_states',
-        }
+            "state": "%SVC_ONLINE=videoqueue",
+            "status": "%SVC_STATE=videoqueue",
+            "possible_states": "api_service_possible_states",
+        },
     ],
     # mqtt
-    [Description(
-        key="service_mqtt",
-        name="MQTT Service",
-        icon="mdi:console",
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-        entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
-    ),
+    [
+        Description(
+            key="service_mqtt",
+            name="MQTT Service",
+            icon="mdi:console",
+            device_class=BinarySensorDeviceClass.CONNECTIVITY,
+            entity_registry_enabled_default=False,  # TODO: Enable this when API is in master
+        ),
         {
-            'state': '%SVC_ONLINE=mqttqueue',
-            'status': '%SVC_STATE=mqttqueue',
-            'possible_states': 'api_service_possible_states',
-        }
+            "state": "%SVC_ONLINE=mqttqueue",
+            "status": "%SVC_STATE=mqttqueue",
+            "possible_states": "api_service_possible_states",
+        },
     ],
 ]
 
@@ -207,100 +212,110 @@ SENSOR_DESCRIPTIONS = [
 # = denotes a static value ('unit': '=mm/s' would set the unit to mm/s, instead of using an attribute from ankerdata)
 SENSOR_WITH_ATTR_DESCRIPTIONS = [
     # 3D Printer Sensor
-    [Description(
-        key="3d_printer",
-        name="3D Printer",
-        icon="mdi:printer-3d",
-        device_class='enum',
-        options=[s.value for s in AnkerStatus],
-    ),
+    [
+        Description(
+            key="3d_printer",
+            name="3D Printer",
+            icon="mdi:printer-3d",
+            device_class="enum",
+            options=[s.value for s in AnkerStatus],
+        ),
         {
-            'state': 'status',
-            'ai_enabled': 'ai_enabled',
-            'motor_locked': 'motor_locked',
-            'error_message': 'error_message',
-            'error_level': 'error_level',
-        }
+            "state": "status",
+            "ai_enabled": "ai_enabled",
+            "motor_locked": "motor_locked",
+            "error_message": "error_message",
+            "error_level": "error_level",
+            "config_host": "%CFG=host",
+            "config_name": "%CFG=printer_name",
+            "api_version": "%VERSION=api",
+            "octoprint_version": "%VERSION=server",
+        },
     ],
     # Hotend Sensor
-    [Description(
-        key="hotend",
-        name="Hotend Temperature",
-        icon="mdi:thermometer",
-        native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
-    ),
+    [
+        Description(
+            key="hotend",
+            name="Hotend Temperature",
+            icon="mdi:thermometer",
+            native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
+        ),
         {
-            'state': 'hotend_temp',
-            'nozzle_type': 'nozzle_type',
-            'target_temp': 'target_hotend_temp',
-            'fan_speed': 'fan_speed',
-        }
+            "state": "hotend_temp",
+            "nozzle_type": "nozzle_type",
+            "target_temp": "target_hotend_temp",
+            "fan_speed": "fan_speed",
+        },
     ],
     # Bed Sensor
-    [Description(
-        key="bed",
-        name="Bed Temperature",
-        icon="mdi:thermometer",
-        native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
-    ),
+    [
+        Description(
+            key="bed",
+            name="Bed Temperature",
+            icon="mdi:thermometer",
+            native_unit_of_measurement=const.UnitOfTemperature.CELSIUS,
+        ),
         {
-            'state': 'bed_temp',
-            'target_temp': 'target_bed_temp',
-            'bed_leveled': 'bed_leveled',
-        }
+            "state": "bed_temp",
+            "target_temp": "target_bed_temp",
+            "bed_leveled": "bed_leveled",
+        },
     ],
     # Print job
-    [Description(
-        key="progress",
-        name="Progress",
-        icon="mdi:file-document",
-        native_unit_of_measurement=const.PERCENTAGE,
-    ),
+    [
+        Description(
+            key="progress",
+            name="Progress",
+            icon="mdi:file-document",
+            native_unit_of_measurement=const.PERCENTAGE,
+        ),
         {
-            'state': 'progress',
-            'gcode_preview_url': 'image',
-            'job_name': 'job_name',
-            'elapsed_time': '%%TD=elapsed_time',
-            'remaining_time': '%%TD=remaining_time',
-            'total_print_time': '%%TD=total_time',
-            'start_time': 'print_start_time',
-            'target_time': 'print_target_time',
-            'current_speed': 'current_speed',
-            'max_speed': 'max_speed',
-            'speed_unit': '=mm/s',
-            'current_layer': 'current_layer',
-            'total_layers': 'total_layers',
-        }
+            "state": "progress",
+            "gcode_preview_url": "image",
+            "job_name": "job_name",
+            "elapsed_time": "%%TD=elapsed_time",
+            "remaining_time": "%%TD=remaining_time",
+            "total_print_time": "%%TD=total_time",
+            "start_time": "print_start_time",
+            "target_time": "print_target_time",
+            "current_speed": "current_speed",
+            "max_speed": "max_speed",
+            "speed_unit": "=mm/s",
+            "current_layer": "current_layer",
+            "total_layers": "total_layers",
+        },
     ],
     # Filament
     # TODO: Move from print job to filament sensor
-    [Description(
-        key="filament",
-        name="Filament",
-        icon="mdi:pipe",
-        device_class='enum',
-        options=[s.value for s in FilamentType],
-    ),
+    [
+        Description(
+            key="filament",
+            name="Filament",
+            icon="mdi:pipe",
+            device_class="enum",
+            options=[s.value for s in FilamentType],
+        ),
         {
-            'state': 'filament',
-            'filament_used': 'filament_used',
-            'filament_used_unit': '=m',
-            'filament_weight': 'filament_weight',
-            'filament_weight_unit': '=g',
-            'filament_density': 'filament_density',
-            'filament_density_unit': '=m³',
-        }
+            "state": "filament",
+            "filament_used": "filament_used",
+            "filament_used_unit": "=m",
+            "filament_weight": "filament_weight",
+            "filament_weight_unit": "=g",
+            "filament_density": "filament_density",
+            "filament_density_unit": "=m³",
+        },
     ],
     # Error Message
-    [Description(
-        key="error",
-        name="Error",
-        icon="mdi:alert",
-        entity_registry_enabled_default=False,
-    ),
+    [
+        Description(
+            key="error",
+            name="Error",
+            icon="mdi:alert",
+            entity_registry_enabled_default=False,
+        ),
         {
-            'state': 'error_message',
-            'error_level': 'error_level',
-        }
+            "state": "error_message",
+            "error_level": "error_level",
+        },
     ],
 ]

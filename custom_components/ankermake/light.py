@@ -32,14 +32,14 @@ class AnkerMakeLightSensor(AnkerMakeBaseEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs):
         try:
-            await turn_on_light(self.coordinator.config['host'])
+            await turn_on_light(self.coordinator.config["host"])
             self._attr_is_on = True
         except AnkerUtilException as e:
             raise ServiceValidationError(e)
 
     async def async_turn_off(self, **kwargs):
         try:
-            await turn_off_light(self.coordinator.config['host'])
+            await turn_off_light(self.coordinator.config["host"])
             self._attr_is_on = False
         except AnkerUtilException as e:
             raise ServiceValidationError(e)
@@ -47,14 +47,11 @@ class AnkerMakeLightSensor(AnkerMakeBaseEntity, LightEntity):
 
 async def async_setup_entry(hass, entry, async_add_entities):
     coordinator = hass.data[DOMAIN][entry.entry_id]
-    description = Description(
-        key="light",
-        name="Light",
-        icon="mdi:lightbulb"
-    )
+    description = Description(key="light", name="Light", icon="mdi:lightbulb")
     dev_info = DeviceInfo(
         manufacturer=MANUFACTURER,
         identifiers={(DOMAIN, entry.entry_id)},
-        name=coordinator.config["printer_name"])
+        name=coordinator.config["printer_name"],
+    )
     entity = AnkerMakeLightSensor(coordinator, description, dev_info)
     async_add_entities([entity], True)
