@@ -287,7 +287,7 @@ class AnkerData:
                 self.job_name = new_job_name or self.job_name  # sticky
                 self.image = websocket_message.get("img")
 
-                progress = round(websocket_message.get("progress", 0) / 100, 1)
+                progress = round(websocket_message.get("progress", 0) / 100, 2)
                 # Only jump from 100->0 if a new job started
                 if new_job_started or not (progress == 0 and self.progress == 100):
                     self.progress = progress
