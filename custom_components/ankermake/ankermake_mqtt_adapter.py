@@ -112,8 +112,8 @@ class AnkerData:
 
     @property
     def printing(self) -> bool:
-        """Returns True if the printer is currently printing."""
-        return self.job_name != "" or self.progress
+        """Returns True if the printer is actively advancing through a print job."""
+        return 0 < self.progress < 100
 
     @property
     def filament_weight(self) -> float:
@@ -151,17 +151,15 @@ class AnkerData:
         if self._old_status == AnkerStatus.ERROR:
             self._remove_error()
 
-        # If the printer is finished/idle and the new status is printing, it should be preheating first
-        # (it takes a while for the printer to send the preheating status on a new print job)
-        if (
-            self._old_status in [AnkerStatus.FINISHED, AnkerStatus.IDLE]
-            and status == AnkerStatus.PRINTING
-        ):
-            status = AnkerStatus.PREHEATING
-
         # Reset the data if the status is one of the reset states
         if status in RESET_STATES:
             self._reset()
+
+        # Target temps are stale once finished, clear them so leftover gaps
+        # don't get misread as active heating during cooldown
+        if status == AnkerStatus.FINISHED:
+            self.target_hotend_temp = 0
+            self.target_bed_temp = 0
 
         self._old_status = status
         return status
@@ -169,11 +167,10 @@ class AnkerData:
     @property
     def status(self) -> str:
         """Returns the current state of the printer."""
-        status = AnkerStatus.PRINTING
-
         # Check if the printer is heating up
         is_heating_hotend = self.target_hotend_temp - 5 > self.hotend_temp > 30
         is_heating_bed = self.target_bed_temp - 2 > self.bed_temp > 30
+        is_heating = is_heating_hotend or is_heating_bed
 
         if not self.online:
             status = AnkerStatus.OFFLINE
@@ -181,11 +178,18 @@ class AnkerData:
             status = AnkerStatus.ERROR
         elif self.paused:
             status = AnkerStatus.PAUSED
-        elif not self.progress and (is_heating_hotend or is_heating_bed):
-            status = AnkerStatus.PREHEATING
         elif self.progress == 100:
             status = AnkerStatus.FINISHED
-        elif not self.printing:
+        elif not self.progress and is_heating:
+            status = AnkerStatus.PREHEATING
+        elif not self.progress and self._old_status == AnkerStatus.FINISHED:
+            # A finished print can keep sending stray progress/job updates (e.g. progress
+            # resetting to 0) without a new print actually starting. A real print always
+            # heats up first, so if there's no heating and no progress, we're still done.
+            status = AnkerStatus.FINISHED
+        elif self.printing:
+            status = AnkerStatus.PRINTING
+        else:
             status = AnkerStatus.IDLE
 
         return self._new_status_handler(status).value
