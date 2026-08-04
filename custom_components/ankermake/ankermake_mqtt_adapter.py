@@ -37,7 +37,9 @@ class AnkerData:
     _last_heartbeat: datetime = None
     _status: AnkerStatus = AnkerStatus.OFFLINE
     _old_status: AnkerStatus = None
-    _old_job_name: str = ""
+
+    # True while the printer reports a job name; used to detect a new job (even a reprint)
+    _job_active: bool = False
     job_name: str = ""
     image: str = ""
 
@@ -97,6 +99,8 @@ class AnkerData:
             for key, value in self.__dict__.items()
             if not key.startswith("_")
         ]
+        # No further updates arrive once offline, so clear this explicitly
+        self._job_active = False
 
     def _pulse(self):
         """Pulse the printer's heartbeat. (Used to determine if the printer is online)"""
@@ -183,9 +187,6 @@ class AnkerData:
         elif not self.progress and is_heating:
             status = AnkerStatus.PREHEATING
         elif not self.progress and self._old_status == AnkerStatus.FINISHED:
-            # A finished print can keep sending stray progress/job updates (e.g. progress
-            # resetting to 0) without a new print actually starting. A real print always
-            # heats up first, so if there's no heating and no progress, we're still done.
             status = AnkerStatus.FINISHED
         elif self.printing:
             status = AnkerStatus.PRINTING
@@ -218,18 +219,13 @@ class AnkerData:
             self.filament = FilamentType.UNKNOWN.value
 
     def _new_print_job(self):
-        """Things to do when a new print job is registered (when the job_name changes)"""
+        """Things to do when a new print job is registered"""
         self._remove_error()
         self.print_start_time = datetime.now(tz=self._timezone) - timedelta(
             seconds=self.elapsed_time
         )
         self._update_target_time()
         self._update_filament()
-
-    def _new_job_handler(self):
-        """Handler for new print jobs"""
-        if self.job_name != self._old_job_name:
-            self._new_print_job()
 
     @property
     def in_error_state(self) -> bool:
@@ -266,8 +262,7 @@ class AnkerData:
         """Update the AnkerData object with a new message from the AnkerMake printer."""
         command_type = websocket_message.get("commandType")
 
-        # Any message at all means the printer is talking to us, so pulse before parsing.
-        # (Parsing a single malformed field must not be able to make the printer look offline.)
+        # Update heartbeat
         self._pulse()
 
         # Debug logging for all messages except those that spam
@@ -277,12 +272,18 @@ class AnkerData:
             # Print schedule is broadcast at fixed intervals (every 5 seconds or so)
             # Not to be confused with print started (unused) that contains mostly the same data
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
-                # Update the status
-                self.job_name = websocket_message.get("name") or ""
+                new_job_name = websocket_message.get("name", "")
+                job_active = bool(new_job_name)
+                # A new job (even a reprint) is detected as inactive -> active
+                new_job_started = job_active and not self._job_active
+                self._job_active = job_active
+                self.job_name = new_job_name or self.job_name  # sticky
                 self.image = websocket_message.get("img")
 
-                progress = websocket_message.get("progress", 0) / 100
-                self.progress = round(progress, 1)
+                progress = round(websocket_message.get("progress", 0) / 100, 1)
+                # Only jump from 100->0 if a new job started
+                if new_job_started or not (progress == 0 and self.progress == 100):
+                    self.progress = progress
 
                 _elapsed_time = int(websocket_message.get("totalTime", 0))
                 _remaining_time = int(websocket_message.get("time", 0))
@@ -311,8 +312,8 @@ class AnkerData:
                 self.filament_used = round(filament_used, 2)
 
                 # Register new print job (only on this event)
-                self._new_job_handler()
-                self._old_job_name = self.job_name
+                if new_job_started:
+                    self._new_print_job()
 
             # Model Layer is broadcast every layer change
             case CommandTypes.ZZ_MQTT_CMD_MODEL_LAYER.value:
@@ -329,7 +330,7 @@ class AnkerData:
                         websocket_message["targetTemp"] / 100, 1
                     )
 
-            # Fan speed gets broadcast.. when the fan speed changes?
+            # Fan speed gets broadcast... when the fan speed changes?
             case CommandTypes.ZZ_MQTT_CMD_FAN_SPEED.value:
                 self.fan_speed = websocket_message.get("value")
 
