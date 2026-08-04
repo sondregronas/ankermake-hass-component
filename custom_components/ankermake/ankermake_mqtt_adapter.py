@@ -173,11 +173,11 @@ class AnkerData:
         """Returns the current state of the printer."""
         # Check if the printer is "heating" by measuring the difference between the current and target temperatures
         is_heating_hotend = (
-            self.hotend_temp > 30
+            self.target_hotend_temp > 33
             and abs(self.target_hotend_temp - self.hotend_temp) > 3
         )
         is_heating_bed = (
-            self.bed_temp > 30 and abs(self.target_bed_temp - self.bed_temp) > 2
+            self.target_bed_temp > 33 and abs(self.target_bed_temp - self.bed_temp) > 2
         )
 
         is_heating = is_heating_hotend or is_heating_bed
