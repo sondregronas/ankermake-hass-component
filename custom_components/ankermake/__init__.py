@@ -95,8 +95,10 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
         def on_message(message):
             try:
                 self.ankerdata.update(message)
-            except AnkerException:
-                _LOGGER.error(
+            except Exception:
+                # Catch everything: an unexpected/missing field in one message must not
+                # tear down the websocket loop (which would make the printer look offline)
+                _LOGGER.exception(
                     f"[AnkerMake] Error updating data (Received message: {message})"
                 )
 
@@ -111,7 +113,7 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
                     elif msg.type == aiohttp.WSMsgType.ERROR:
                         break
         except Exception as e:
-            _LOGGER.debug(f"[AnkerMake] Error connecting to WS: {e}")
+            _LOGGER.warning(f"[AnkerMake] Error connecting to WS: {e}")
         finally:
             await session.close()
 

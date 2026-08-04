@@ -261,6 +261,11 @@ class AnkerData:
     def update(self, websocket_message: dict):
         """Update the AnkerData object with a new message from the AnkerMake printer."""
         command_type = websocket_message.get("commandType")
+
+        # Any message at all means the printer is talking to us, so pulse before parsing.
+        # (Parsing a single malformed field must not be able to make the printer look offline.)
+        self._pulse()
+
         # Debug logging for all messages except those that spam
         if command_type not in [1000, 1001, 1003, 1004, 1006, 1081, 1084]:
             _LOGGER.debug(f"Received message: {websocket_message}")
@@ -269,31 +274,35 @@ class AnkerData:
             # Not to be confused with print started (unused) that contains mostly the same data
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
                 # Update the status
-                self.job_name = websocket_message.get("name")
+                self.job_name = websocket_message.get("name") or ""
                 self.image = websocket_message.get("img")
 
-                progress = websocket_message.get("progress") / 100
+                progress = websocket_message.get("progress", 0) / 100
                 self.progress = round(progress, 1)
 
-                _elapsed_time = int(websocket_message.get("totalTime"))
-                _remaining_time = int(websocket_message.get("time"))
+                _elapsed_time = int(websocket_message.get("totalTime", 0))
+                _remaining_time = int(websocket_message.get("time", 0))
                 self.elapsed_time = _elapsed_time
                 self.remaining_time = _remaining_time
                 self.total_time = _elapsed_time + _remaining_time
 
-                self.ai_enabled = (
-                    max(
-                        websocket_message.get("aiFlag"),
-                        websocket_message.get("AISwitch"),
+                # Not every firmware sends the AI fields, so keep the previous value when absent
+                if "aiFlag" in websocket_message or "AISwitch" in websocket_message:
+                    self.ai_enabled = (
+                        max(
+                            websocket_message.get("aiFlag", 0),
+                            websocket_message.get("AISwitch", 0),
+                        )
+                        == 1
                     )
-                    == 1
-                )
-                self.ai_level = websocket_message.get("AISensitivity")
-                self.ai_pause_print = websocket_message.get("AIPausePrint") == 1
-                self.ai_data_collection = websocket_message.get("AIJoinImproving") == 1
+                self.ai_level = websocket_message.get("AISensitivity", self.ai_level)
+                if "AIPausePrint" in websocket_message:
+                    self.ai_pause_print = websocket_message["AIPausePrint"] == 1
+                if "AIJoinImproving" in websocket_message:
+                    self.ai_data_collection = websocket_message["AIJoinImproving"] == 1
 
                 filament_used = (
-                    websocket_message.get("filamentUsed") / 1000
+                    websocket_message.get("filamentUsed", 0) / 1000
                 )  # Get meters (from mm)
                 self.filament_used = round(filament_used, 2)
 
@@ -308,12 +317,13 @@ class AnkerData:
 
             # Nozzle temp gets broadcast with fixed intervals (every 5 seconds or so)
             case CommandTypes.ZZ_MQTT_CMD_NOZZLE_TEMP.value:
-                self._pulse()  # _pulse goes here since this is a reliable mqtt message that doesn't get spammed too much
-
-                hotend_temp = websocket_message.get("currentTemp") / 100
-                target_hotend_temp = websocket_message.get("targetTemp") / 100
-                self.hotend_temp = round(hotend_temp, 1)
-                self.target_hotend_temp = round(target_hotend_temp, 1)
+                # currentTemp/targetTemp are sent as deltas: keep the last known value when absent
+                if "currentTemp" in websocket_message:
+                    self.hotend_temp = round(websocket_message["currentTemp"] / 100, 1)
+                if "targetTemp" in websocket_message:
+                    self.target_hotend_temp = round(
+                        websocket_message["targetTemp"] / 100, 1
+                    )
 
             # Fan speed gets broadcast.. when the fan speed changes?
             case CommandTypes.ZZ_MQTT_CMD_FAN_SPEED.value:
@@ -325,14 +335,13 @@ class AnkerData:
 
             # Hotbed temp gets broadcast with fixed intervals (every 5 seconds or so)
             case CommandTypes.ZZ_MQTT_CMD_HOTBED_TEMP.value:
-                bed_temp = (
-                    websocket_message.get("currentTemp") / 100
-                )  # Divide by 100 to get the correct value
-                target_bed_temp = (
-                    websocket_message.get("targetTemp") / 100
-                )  # Divide by 100 to get the correct value
-                self.bed_temp = round(bed_temp, 1)
-                self.target_bed_temp = round(target_bed_temp, 1)
+                # Divide by 100 to get the correct value; keep the last known value when absent
+                if "currentTemp" in websocket_message:
+                    self.bed_temp = round(websocket_message["currentTemp"] / 100, 1)
+                if "targetTemp" in websocket_message:
+                    self.target_bed_temp = round(
+                        websocket_message["targetTemp"] / 100, 1
+                    )
 
             # Print speed gets broadcast sporadically?, stays the same even when paused
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SPEED.value:
