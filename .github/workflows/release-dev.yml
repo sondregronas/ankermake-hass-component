@@ -20,12 +20,16 @@ jobs:
           fetch-depth: 0
           ref: main
 
-      - name: Get tag from commit summary with abbreviated tag
+      - name: Compute next dev tag
         run: |
-          tag=$(git describe --tags --abbrev=0)
-          if [[ $tag != *"-0" ]]; then
-            tag=$(echo $tag | grep -oP '\d+\.\d+\.\d+')
-            tag=$(echo $tag | awk -F. '{print $1"."$2+1".0-0"}')
+          latest_release=$(git tag --list '[0-9]*.[0-9]*.[0-9]*' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
+          next_version=$(echo "$latest_release" | awk -F. '{print $1"."$2+1".0"}')
+          last_dev=$(git tag --list "${next_version}-*" | sort -V | tail -n1)
+          if [[ -z "$last_dev" ]]; then
+            tag="${next_version}-0"
+          else
+            n=${last_dev#"${next_version}-"}
+            tag="${next_version}-$((n+1))"
           fi
           echo "tag=$tag" >> $GITHUB_ENV
 
