@@ -176,6 +176,11 @@ class AnkerData:
         is_heating_bed = self.target_bed_temp - 2 > self.bed_temp > 30
         is_heating = is_heating_hotend or is_heating_bed
 
+        # Targets are only set by the printer once a job is heating up, so reaching
+        # them (without printing yet) means we're in the auto bed leveling step
+        targets_set = self.target_hotend_temp > 0 or self.target_bed_temp > 0
+        reached_targets = targets_set and not is_heating
+
         if not self.online:
             status = AnkerStatus.OFFLINE
         elif self.in_error_state:
@@ -186,6 +191,8 @@ class AnkerData:
             status = AnkerStatus.FINISHED
         elif not self.progress and is_heating:
             status = AnkerStatus.PREHEATING
+        elif not self.progress and reached_targets:
+            status = AnkerStatus.LEVELING
         elif not self.progress and self._old_status == AnkerStatus.FINISHED:
             status = AnkerStatus.FINISHED
         elif self.printing:

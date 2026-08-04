@@ -14,6 +14,7 @@ class AnkerStatus(Enum):
     ERROR = "Error"
     OFFLINE = "Offline"
     PREHEATING = "Preheating"
+    LEVELING = "Leveling"
     FINISHED = "Finished"
 
 
