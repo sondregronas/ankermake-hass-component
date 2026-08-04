@@ -171,9 +171,15 @@ class AnkerData:
     @property
     def status(self) -> str:
         """Returns the current state of the printer."""
-        # Check if the printer is heating up
-        is_heating_hotend = self.target_hotend_temp - 5 > self.hotend_temp > 30
-        is_heating_bed = self.target_bed_temp - 2 > self.bed_temp > 30
+        # Check if the printer is "heating" by measuring the difference between the current and target temperatures
+        is_heating_hotend = (
+            self.hotend_temp > 30
+            and abs(self.target_hotend_temp - self.hotend_temp) > 3
+        )
+        is_heating_bed = (
+            self.bed_temp > 30 and abs(self.target_bed_temp - self.bed_temp) > 2
+        )
+
         is_heating = is_heating_hotend or is_heating_bed
 
         # Targets are only set by the printer once a job is heating up, so reaching
