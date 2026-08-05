@@ -160,11 +160,8 @@ class AnkerData:
         if status in RESET_STATES:
             self._reset()
 
-        # Target temps are stale once finished, clear them so leftover gaps
-        # don't get misread as active heating during cooldown
         if status == AnkerStatus.FINISHED:
-            self.target_hotend_temp = 0
-            self.target_bed_temp = 0
+            self._clear_target_temps()
 
         self._old_status = status
         return status
@@ -251,6 +248,11 @@ class AnkerData:
         self.error_message = ""
         self.error_level = ""
 
+    def _clear_target_temps(self):
+        """Clears stale target temps (e.g. once finished or with no active job)."""
+        self.target_hotend_temp = 0
+        self.target_bed_temp = 0
+
     @property
     def api_service_possible_states(self) -> list:
         return list(self._api_status.get("possible_states", {}).keys()) + [
@@ -288,19 +290,25 @@ class AnkerData:
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
                 new_job_name = websocket_message.get("name", "")
                 job_active = bool(new_job_name)
-                # A new job (even a reprint) is detected as inactive -> active
-                new_job_started = job_active and not self._job_active
+                _elapsed_time = int(websocket_message.get("totalTime", 0))
+                _remaining_time = int(websocket_message.get("time", 0))
+                # A reprint never toggles job_active false->true, so also treat a
+                # reset in elapsed time as a new job
+                new_job_started = job_active and (
+                    not self._job_active or _elapsed_time < self.elapsed_time
+                )
                 self._job_active = job_active
                 self.job_name = new_job_name or self.job_name  # sticky
                 self.image = websocket_message.get("img")
+
+                if not job_active:
+                    self._clear_target_temps()
 
                 progress = math.floor(websocket_message.get("progress", 0)) / 100
                 # Only jump from 100->0 if a new job started
                 if new_job_started or not (progress == 0 and self.progress == 100):
                     self.progress = progress
 
-                _elapsed_time = int(websocket_message.get("totalTime", 0))
-                _remaining_time = int(websocket_message.get("time", 0))
                 self.elapsed_time = _elapsed_time
                 self.remaining_time = _remaining_time
                 self.total_time = _elapsed_time + _remaining_time
