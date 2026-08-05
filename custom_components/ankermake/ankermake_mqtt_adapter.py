@@ -314,19 +314,21 @@ class AnkerData:
                 self.total_time = _elapsed_time + _remaining_time
 
                 # Not every firmware sends the AI fields, so keep the previous value when absent
-                if "aiFlag" in websocket_message or "AISwitch" in websocket_message:
-                    self.ai_enabled = (
-                        max(
-                            websocket_message.get("aiFlag", 0),
-                            websocket_message.get("AISwitch", 0),
-                        )
-                        == 1
+                self.ai_enabled = (
+                    max(
+                        websocket_message.get("aiFlag", 0),
+                        websocket_message.get("AISwitch", 0),
                     )
+                    == 1
+                )
                 self.ai_level = websocket_message.get("AISensitivity", self.ai_level)
-                if "AIPausePrint" in websocket_message:
-                    self.ai_pause_print = websocket_message["AIPausePrint"] == 1
-                if "AIJoinImproving" in websocket_message:
-                    self.ai_data_collection = websocket_message["AIJoinImproving"] == 1
+                self.ai_pause_print = (
+                    websocket_message.get("AIPausePrint", self.ai_pause_print) == 1
+                )
+                self.ai_data_collection = (
+                    websocket_message.get("AIJoinImproving", self.ai_data_collection)
+                    == 1
+                )
 
                 filament_used = (
                     websocket_message.get("filamentUsed", 0) / 1000
