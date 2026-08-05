@@ -40,7 +40,6 @@ class AnkerData:
     _old_status: AnkerStatus = None
 
     _job_active: bool = False
-    _accepting_targets: bool = False  # Whether to parse target temp messages
     job_name: str = ""
     image: str = ""
 
@@ -102,7 +101,6 @@ class AnkerData:
         ]
         # No further updates arrive once offline, so clear this explicitly
         self._job_active = False
-        self._accepting_targets = False
 
     def _pulse(self):
         """Pulse the printer's heartbeat. (Used to determine if the printer is online)"""
@@ -233,7 +231,6 @@ class AnkerData:
     def _new_print_job(self):
         """Things to do when a new print job is registered"""
         self._remove_error()
-        self._accepting_targets = True
         self.print_start_time = datetime.now(tz=self._timezone) - timedelta(
             seconds=self.elapsed_time
         )
@@ -251,10 +248,9 @@ class AnkerData:
         self.error_level = ""
 
     def _clear_target_temps(self):
-        """Clears stale target temps and stops accepting new ones until the next job."""
+        """Clears stale target temps."""
         self.target_hotend_temp = 0
         self.target_bed_temp = 0
-        self._accepting_targets = False
 
     @property
     def api_service_possible_states(self) -> list:
@@ -348,7 +344,7 @@ class AnkerData:
                 # currentTemp/targetTemp are sent separately: keep the last known value when absent
                 if "currentTemp" in wm:
                     self.hotend_temp = round(wm["currentTemp"] / 100, 1)
-                if "targetTemp" in wm and self._accepting_targets:
+                if "targetTemp" in wm:
                     self.target_hotend_temp = round(wm["targetTemp"] / 100, 1)
 
             # Fan speed gets broadcast... when the fan speed changes?
@@ -364,7 +360,7 @@ class AnkerData:
                 # Divide by 100 to get the correct value; keep the last known value when absent
                 if "currentTemp" in wm:
                     self.bed_temp = round(wm["currentTemp"] / 100, 1)
-                if "targetTemp" in wm and self._accepting_targets:
+                if "targetTemp" in wm:
                     self.target_bed_temp = round(wm["targetTemp"] / 100, 1)
 
             # Print speed gets broadcast sporadically?, stays the same even when paused

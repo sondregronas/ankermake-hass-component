@@ -22,12 +22,8 @@ class AnkerMakeSensor(AnkerMakeBaseEntity, SensorEntity):
     def _update_from_anker(self) -> None:
         try:
             value = self._filter_handler(self.entity_description.key)
-            if self.coordinator.ankerdata.online:
-                self._attr_available = True
-            else:
-                self._attr_available = False
-            # Only update the value if it is not None (keep the old value)
-            if value:
+            self._attr_available = self.coordinator.ankerdata.online
+            if value is not None:
                 self._attr_native_value = value
         except AttributeError:
             self._attr_available = False
@@ -49,10 +45,7 @@ class AnkerMakeSensorWithAttr(AnkerMakeBaseEntity, SensorEntity):
                     continue
                 self._attr_extra_state_attributes[attr] = self._filter_handler(key)
 
-            if not self.coordinator.ankerdata.online:
-                self._attr_available = True
-            else:
-                self._attr_available = False
+            self._attr_available = self.coordinator.ankerdata.online
         except (AttributeError, KeyError):
             self._attr_available = False
 
