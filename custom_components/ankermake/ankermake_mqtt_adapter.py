@@ -192,6 +192,13 @@ class AnkerData:
             status = AnkerStatus.PAUSED
         elif self.progress == 100:
             status = AnkerStatus.FINISHED
+        elif (
+            not self.progress
+            and self._old_status == AnkerStatus.LEVELING
+            and is_heating
+        ):
+            # Target temp can bump up mid-leveling; don't fall back to preheating
+            status = AnkerStatus.LEVELING
         elif not self.progress and is_heating:
             status = AnkerStatus.PREHEATING
         elif not self.progress and reached_targets:
