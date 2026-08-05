@@ -7,6 +7,7 @@ In other words, this module is the "brain" of the AnkerMake integration.
 
 import os
 import re
+import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from logging import getLogger
@@ -173,11 +174,11 @@ class AnkerData:
         """Returns the current state of the printer."""
         # Check if the printer is "heating" by measuring the difference between the current and target temperatures
         is_heating_hotend = (
-            self.target_hotend_temp > 33
+            self.target_hotend_temp
             and abs(self.target_hotend_temp - self.hotend_temp) > 3
         )
         is_heating_bed = (
-            self.target_bed_temp > 33 and abs(self.target_bed_temp - self.bed_temp) > 2
+            self.target_bed_temp and abs(self.target_bed_temp - self.bed_temp) > 2
         )
 
         is_heating = is_heating_hotend or is_heating_bed
@@ -293,7 +294,7 @@ class AnkerData:
                 self.job_name = new_job_name or self.job_name  # sticky
                 self.image = websocket_message.get("img")
 
-                progress = round(websocket_message.get("progress", 0) / 100, 2)
+                progress = math.floor(websocket_message.get("progress", 0)) / 100
                 # Only jump from 100->0 if a new job started
                 if new_job_started or not (progress == 0 and self.progress == 100):
                     self.progress = progress
