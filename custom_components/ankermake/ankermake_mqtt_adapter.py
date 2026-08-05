@@ -276,22 +276,23 @@ class AnkerData:
 
     def update(self, websocket_message: dict):
         """Update the AnkerData object with a new message from the AnkerMake printer."""
-        command_type = websocket_message.get("commandType")
+        wm = websocket_message
+        command_type = wm.get("commandType")
 
         # Update heartbeat
         self._pulse()
 
         # Debug logging for all messages except those that spam
         if command_type not in [1000, 1001, 1003, 1004, 1006, 1081, 1084]:
-            _LOGGER.debug(f"Received message: {websocket_message}")
+            _LOGGER.debug(f"Received message: {wm}")
         match command_type:
             # Print schedule is broadcast at fixed intervals (every 5 seconds or so)
             # Not to be confused with print started (unused) that contains mostly the same data
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
-                new_job_name = websocket_message.get("name", "")
+                new_job_name = wm.get("name", "")
                 job_active = bool(new_job_name)
-                _elapsed_time = int(websocket_message.get("totalTime", 0))
-                _remaining_time = int(websocket_message.get("time", 0))
+                _elapsed_time = int(wm.get("totalTime", 0))
+                _remaining_time = int(wm.get("time", 0))
                 # A reprint never toggles job_active false->true, so also treat a
                 # reset in elapsed time as a new job
                 new_job_started = job_active and (
@@ -299,12 +300,12 @@ class AnkerData:
                 )
                 self._job_active = job_active
                 self.job_name = new_job_name or self.job_name  # sticky
-                self.image = websocket_message.get("img")
+                self.image = wm.get("img")
 
                 if not job_active:
                     self._clear_target_temps()
 
-                progress = math.floor(websocket_message.get("progress", 0)) / 100
+                progress = math.floor(wm.get("progress", 0)) / 100
                 # Only jump from 100->0 if a new job started
                 if new_job_started or not (progress == 0 and self.progress == 100):
                     self.progress = progress
@@ -316,23 +317,18 @@ class AnkerData:
                 # Not every firmware sends the AI fields, so keep the previous value when absent
                 self.ai_enabled = (
                     max(
-                        websocket_message.get("aiFlag", 0),
-                        websocket_message.get("AISwitch", 0),
+                        wm.get("aiFlag", 0),
+                        wm.get("AISwitch", 0),
                     )
                     == 1
                 )
-                self.ai_level = websocket_message.get("AISensitivity", self.ai_level)
-                self.ai_pause_print = (
-                    websocket_message.get("AIPausePrint", self.ai_pause_print) == 1
-                )
+                self.ai_level = wm.get("AISensitivity", self.ai_level)
+                self.ai_pause_print = wm.get("AIPausePrint", self.ai_pause_print) == 1
                 self.ai_data_collection = (
-                    websocket_message.get("AIJoinImproving", self.ai_data_collection)
-                    == 1
+                    wm.get("AIJoinImproving", self.ai_data_collection) == 1
                 )
 
-                filament_used = (
-                    websocket_message.get("filamentUsed", 0) / 1000
-                )  # Get meters (from mm)
+                filament_used = wm.get("filamentUsed", 0) / 1000  # Get meters (from mm)
                 self.filament_used = round(filament_used, 2)
 
                 # Register new print job (only on this event)
@@ -341,40 +337,36 @@ class AnkerData:
 
             # Model Layer is broadcast every layer change
             case CommandTypes.ZZ_MQTT_CMD_MODEL_LAYER.value:
-                self.current_layer = websocket_message.get("real_print_layer")
-                self.total_layers = websocket_message.get("total_layer")
+                self.current_layer = wm.get("real_print_layer")
+                self.total_layers = wm.get("total_layer")
 
             # Nozzle temp gets broadcast with fixed intervals (every 5 seconds or so)
             case CommandTypes.ZZ_MQTT_CMD_NOZZLE_TEMP.value:
                 # currentTemp/targetTemp are sent as deltas: keep the last known value when absent
-                if "currentTemp" in websocket_message:
-                    self.hotend_temp = round(websocket_message["currentTemp"] / 100, 1)
-                if "targetTemp" in websocket_message:
-                    self.target_hotend_temp = round(
-                        websocket_message["targetTemp"] / 100, 1
-                    )
+                if "currentTemp" in wm:
+                    self.hotend_temp = round(wm["currentTemp"] / 100, 1)
+                if "targetTemp" in wm:
+                    self.target_hotend_temp = round(wm["targetTemp"] / 100, 1)
 
             # Fan speed gets broadcast... when the fan speed changes?
             case CommandTypes.ZZ_MQTT_CMD_FAN_SPEED.value:
-                self.fan_speed = websocket_message.get("value")
+                self.fan_speed = wm.get("value")
 
             # Motor lock gets broadcast presumably when the motor is locked/unlocked (on print start)
             case CommandTypes.ZZ_MQTT_CMD_MOTOR_LOCK.value:
-                self.motor_locked = websocket_message.get("lock") == 1
+                self.motor_locked = wm.get("lock") == 1
 
             # Hotbed temp gets broadcast with fixed intervals (every 5 seconds or so)
             case CommandTypes.ZZ_MQTT_CMD_HOTBED_TEMP.value:
                 # Divide by 100 to get the correct value; keep the last known value when absent
-                if "currentTemp" in websocket_message:
-                    self.bed_temp = round(websocket_message["currentTemp"] / 100, 1)
-                if "targetTemp" in websocket_message:
-                    self.target_bed_temp = round(
-                        websocket_message["targetTemp"] / 100, 1
-                    )
+                if "currentTemp" in wm:
+                    self.bed_temp = round(wm["currentTemp"] / 100, 1)
+                if "targetTemp" in wm:
+                    self.target_bed_temp = round(wm["targetTemp"] / 100, 1)
 
             # Print speed gets broadcast sporadically?, stays the same even when paused
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SPEED.value:
-                self.current_speed = websocket_message.get("value")
+                self.current_speed = wm.get("value")
 
             # A _message_ gets sent when the printer is paused, but it doesn't contain any relevant data
             # No idea if this can be sent in other situations as well
@@ -385,18 +377,18 @@ class AnkerData:
 
             # Max print speed gets broadcast sporadically?
             case CommandTypes.TEMP_MAX_PRINT_SPEED.value:
-                self.max_speed = websocket_message.get("max_print_speed")
+                self.max_speed = wm.get("max_print_speed")
 
             # Nozzle type is broadcast shortly after a print job is _properly_ started
             case CommandTypes.TEMP_NOZZLE_TYPE.value:
                 self.nozzle_type = NOZZLE_TYPES.get(
-                    str(websocket_message.get("nozzle_type")),
-                    str(websocket_message.get("nozzle_type")),
+                    str(wm.get("nozzle_type")),
+                    str(wm.get("nozzle_type")),
                 )
 
             # Auto-leveling sends a message with isLeveled: 1 (and presumably isLeveled: 0 when it's not leveled)
             case CommandTypes.TEMP_IS_LEVELED.value:
-                self.bed_leveled = websocket_message.get("isLeveled") == 1
+                self.bed_leveled = wm.get("isLeveled") == 1
 
             # When the STOP button is pressed, this message is sent
             case CommandTypes.TEMP_PRINT_STOPPED.value:
@@ -405,22 +397,20 @@ class AnkerData:
 
             # Errors (?)
             case CommandTypes.TEMP_ERROR_CODE.value:
-                self.error_level = websocket_message.get("errorLevel")
+                self.error_level = wm.get("errorLevel")
                 self.error_message = ERROR_CODES.get(
-                    websocket_message.get("errorCode"),
-                    websocket_message.get("errorCode"),
+                    wm.get("errorCode"),
+                    wm.get("errorCode"),
                 )
                 if self.error_message not in ERROR_CODES.values():
                     _LOGGER.error(
-                        f"Unknown error occured: {self.error_message}. Please open a github issue with a description of what you were doing when this error occurred, and please look in the AnkerMake app for a proper error message. Include this: (Received message: {websocket_message})"
+                        f"Unknown error occured: {self.error_message}. Please open a github issue with a description of what you were doing when this error occurred, and please look in the AnkerMake app for a proper error message. Include this: (Received message: {wm})"
                     )
 
             # If the command_type is not handled, raise an exception (unless we know it's not used)
             case _:
                 if command_type not in CommandTypes:
-                    _LOGGER.error(
-                        f"Unknown command_type: {command_type} ({websocket_message})"
-                    )
+                    _LOGGER.error(f"Unknown command_type: {command_type} ({wm})")
                     raise AnkerUnhandledCommandException(
-                        f"Unknown command_type: {command_type} ({websocket_message})"
+                        f"Unknown command_type: {command_type} ({wm})"
                     )
