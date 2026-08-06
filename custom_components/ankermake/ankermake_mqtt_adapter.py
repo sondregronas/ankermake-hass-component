@@ -98,6 +98,8 @@ class AnkerData:
             setattr(self, key, getattr(self.__class__, key))
             for key, value in self.__dict__.items()
             if not key.startswith("_")
+            # Skip keys ending with _temp unless the new state is OFFLINE (to avoid clearing target temps mid-print)
+            and not (key.endswith("_temp") and self._status != AnkerStatus.OFFLINE)
         ]
         # No further updates arrive once offline, so clear this explicitly
         self._job_active = False
@@ -145,20 +147,21 @@ class AnkerData:
         """Handler for new status changes."""
         status = new_status
 
-        # If the status is the same as the old status, return
+        # If the status is the same as the old status, return the same status
         if status == self._old_status:
             return status
 
         self._update_target_time()
 
-        # Reset the error message if the status is no longer an error
+        # Reset the error message if we are moving from an errored state
         if self._old_status == AnkerStatus.ERROR:
             self._remove_error()
 
-        # Reset the data if the status is one of the reset states
+        # Reset all data if the status is one of the reset states
         if status in RESET_STATES:
             self._reset()
 
+        # Clear target temps once done, this step might be redundant.
         if status == AnkerStatus.FINISHED:
             self._clear_target_temps()
 
@@ -166,22 +169,29 @@ class AnkerData:
         return status
 
     @property
-    def status(self) -> str:
-        """Returns the current state of the printer."""
-        # Check if the printer is "heating" by measuring the difference between the current and target temperatures
-        is_heating_hotend = (
+    def is_heating_hotend(self, threshold: float = 3) -> bool:
+        """Returns True if the hotend is actively heating."""
+        return (
             self.target_hotend_temp
-            and abs(self.target_hotend_temp - self.hotend_temp) > 3
-        )
-        is_heating_bed = (
-            self.target_bed_temp and abs(self.target_bed_temp - self.bed_temp) > 2
+            and abs(self.target_hotend_temp - self.hotend_temp) > threshold
         )
 
-        is_heating = is_heating_hotend or is_heating_bed
+    @property
+    def is_heating_bed(self, threshold: float = 2) -> bool:
+        """Returns True if the bed is actively heating."""
+        return (
+            self.target_bed_temp
+            and abs(self.target_bed_temp - self.bed_temp) > threshold
+        )
+
+    @property
+    def status(self) -> str:
+        """Returns the current state of the printer."""
+        is_heating = self.is_heating_hotend or self.is_heating_bed
 
         # Targets are only set by the printer once a job is heating up, so reaching
         # them (without printing yet) means we're in the homing step
-        targets_set = self.target_hotend_temp > 0 or self.target_bed_temp > 0
+        targets_set = self.target_hotend_temp > 0 and self.target_bed_temp > 0
         reached_targets = targets_set and not is_heating
 
         if not self.online:
