@@ -27,7 +27,11 @@ _LOGGER = getLogger(__name__)
 if os.environ.get("ANKERMAKE_DEBUG", False):
     _LOGGER.setLevel("DEBUG")
 
-RESET_STATES = [AnkerStatus.OFFLINE, AnkerStatus.IDLE]
+RESET_STATES = [
+    AnkerStatus.OFFLINE,
+    AnkerStatus.IDLE,
+    AnkerStatus.CHANGING_FILAMENT,
+]
 
 
 @dataclass
@@ -188,6 +192,8 @@ class AnkerData:
     def status(self) -> str:
         """Returns the current state of the printer."""
         is_heating = self.is_heating_hotend or self.is_heating_bed
+        # We can detect filament changing when hotend is heating and the bed temperature target is nil
+        is_changing_filament = self.target_hotend_temp and not self.target_bed_temp
 
         # Targets are only set by the printer once a job is heating up, so reaching
         # them (without printing yet) means we're in the homing step
@@ -200,6 +206,8 @@ class AnkerData:
             status = AnkerStatus.ERROR
         elif self.paused:
             status = AnkerStatus.PAUSED
+        elif is_changing_filament:
+            status = AnkerStatus.CHANGING_FILAMENT
         elif self.progress == 100:
             status = AnkerStatus.FINISHED
         elif (
