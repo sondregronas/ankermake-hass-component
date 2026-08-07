@@ -303,11 +303,19 @@ class AnkerData:
                         # Reset state to idle only if we are finished
                         if self._print_finished:
                             self._reset()
+                        # Failed to transfer G-Code
+                        if self.error_message == ERROR_CODES.get("0xFF01030005"):
+                            self._remove_error()
                     case NotifyEventTypes.PRINT_FINISHED.value:
                         self._print_finished = True
                     case NotifyEventTypes.PRINT_ACTIVE.value:
                         # "Filament Broken" error is fixed if present
-                        if self.error_message == ERROR_CODES.get("0xFF01030001"):
+                        if self.error_message in [
+                            ERROR_CODES.get("0xFF01030001"),
+                            ERROR_CODES.get(
+                                "0xFF01030005"  # Failsafe for g-code error
+                            ),
+                        ]:
                             self._remove_error()
                     case NotifyEventTypes.PRINT_PAUSED.value:
                         self.paused = True
