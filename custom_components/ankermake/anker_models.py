@@ -10,7 +10,7 @@ class AnkerUnhandledCommandException(AnkerException): ...
 class AnkerStatus(Enum):
     IDLE = "Idle"
     PRINTING = "Printing"
-    CHANGING_FILAMENT = "Changing_Filament"
+    CHANGING_FILAMENT = "Changing Filament"
     PAUSED = "Paused"
     ERROR = "Error"
     OFFLINE = "Offline"
