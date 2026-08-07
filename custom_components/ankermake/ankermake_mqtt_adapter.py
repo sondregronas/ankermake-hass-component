@@ -165,10 +165,6 @@ class AnkerData:
         if status in RESET_STATES:
             self._reset()
 
-        # Clear target temps once done, this step might be redundant.
-        if status == AnkerStatus.FINISHED:
-            self._clear_target_temps()
-
         self._old_status = status
         return status
 
@@ -208,6 +204,8 @@ class AnkerData:
             status = AnkerStatus.PAUSED
         elif is_changing_filament:
             status = AnkerStatus.CHANGING_FILAMENT
+        elif self.printing:
+            status = AnkerStatus.PRINTING
         elif self.progress == 100:
             status = AnkerStatus.FINISHED
         elif (
@@ -219,10 +217,6 @@ class AnkerData:
             status = AnkerStatus.PREHEATING
         elif not self.progress and reached_targets:
             status = AnkerStatus.HOMING
-        elif not self.progress and self._old_status == AnkerStatus.FINISHED:
-            status = AnkerStatus.FINISHED
-        elif self.printing:
-            status = AnkerStatus.PRINTING
         else:
             status = AnkerStatus.IDLE
 
@@ -269,11 +263,6 @@ class AnkerData:
         """Removes the error from the AnkerData object, allowing the status to change."""
         self.error_message = ""
         self.error_level = ""
-
-    def _clear_target_temps(self):
-        """Clears stale target temps."""
-        self.target_hotend_temp = 0
-        self.target_bed_temp = 0
 
     @property
     def api_service_possible_states(self) -> list:
@@ -324,9 +313,6 @@ class AnkerData:
                 self.job_name = new_job_name or self.job_name  # sticky
                 self.image = wm.get("img")
 
-                if not job_active:
-                    self._clear_target_temps()
-
                 progress = math.floor(wm.get("progress", 0)) / 100
                 # Only jump from 100->0 if a new job started
                 if new_job_started or not (progress == 0 and self.progress == 100):
@@ -364,11 +350,12 @@ class AnkerData:
 
             # Nozzle temp gets broadcast with fixed intervals (every 5 seconds or so)
             case CommandTypes.ZZ_MQTT_CMD_NOZZLE_TEMP.value:
-                # currentTemp/targetTemp are sent separately: keep the last known value when absent
-                if "currentTemp" in wm:
-                    self.hotend_temp = round(wm["currentTemp"] / 100, 1)
-                if "targetTemp" in wm:
-                    self.target_hotend_temp = round(wm["targetTemp"] / 100, 1)
+                self.hotend_temp = round(
+                    wm.get("currentTemp", self.hotend_temp * 100) / 100, 1
+                )
+                self.target_hotend_temp = round(
+                    wm.get("targetTemp", self.target_hotend_temp * 100) / 100, 1
+                )
 
             # Fan speed gets broadcast... when the fan speed changes?
             case CommandTypes.ZZ_MQTT_CMD_FAN_SPEED.value:
@@ -380,11 +367,12 @@ class AnkerData:
 
             # Hotbed temp gets broadcast with fixed intervals (every 5 seconds or so)
             case CommandTypes.ZZ_MQTT_CMD_HOTBED_TEMP.value:
-                # Divide by 100 to get the correct value; keep the last known value when absent
-                if "currentTemp" in wm:
-                    self.bed_temp = round(wm["currentTemp"] / 100, 1)
-                if "targetTemp" in wm:
-                    self.target_bed_temp = round(wm["targetTemp"] / 100, 1)
+                self.bed_temp = round(
+                    wm.get("currentTemp", self.bed_temp * 100) / 100, 1
+                )
+                self.target_bed_temp = round(
+                    wm.get("targetTemp", self.target_bed_temp * 100) / 100, 1
+                )
 
             # Print speed gets broadcast sporadically?, stays the same even when paused
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SPEED.value:
