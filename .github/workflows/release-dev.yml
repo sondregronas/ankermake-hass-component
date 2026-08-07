@@ -24,12 +24,12 @@ jobs:
         run: |
           latest_release=$(git tag --list '[0-9]*.[0-9]*.[0-9]*' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1)
           next_version=$(echo "$latest_release" | awk -F. '{print $1"."$2+1".0"}')
-          last_dev=$(git tag --list "${next_version}-*" | sort -V | tail -n1)
+          last_dev=$(git tag --list "${next_version}-rc.*" | sort -V | tail -n1)
           if [[ -z "$last_dev" ]]; then
-            tag="${next_version}-0"
+            tag="${next_version}-rc.0"
           else
-            n=${last_dev#"${next_version}-"}
-            tag="${next_version}-$((n+1))"
+            n=${last_dev#"${next_version}-rc."}
+            tag="${next_version}-rc.$((n+1))"
           fi
           echo "tag=$tag" >> $GITHUB_ENV
 
