@@ -14,8 +14,6 @@ from . import AnkerMakeBaseEntity
 from .const import DOMAIN, MANUFACTURER
 from .sensor_manifest import SENSOR_DESCRIPTIONS, SENSOR_WITH_ATTR_DESCRIPTIONS
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class AnkerMakeSensor(AnkerMakeBaseEntity, SensorEntity):
     @callback
@@ -62,8 +60,6 @@ async def async_setup_entry(hass, entry, async_add_entities):
     for description in SENSOR_DESCRIPTIONS:
         entities.append(AnkerMakeSensor(coordinator, description, dev_info))
     for description, attributes in SENSOR_WITH_ATTR_DESCRIPTIONS:
-        entities.append(
-            AnkerMakeSensorWithAttr(coordinator, description, dev_info, attributes)
-        )
+        entities.append(AnkerMakeSensorWithAttr(coordinator, description, dev_info, attributes))
 
     async_add_entities(entities, True)

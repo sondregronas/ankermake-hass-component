@@ -53,8 +53,6 @@ streams:
 <details>
 <summary>Alt: Frigate config</summary>
 
-Note: Frigate just runs go2rtc
-
 `config.yml`
 
 ```yaml
@@ -86,7 +84,7 @@ For this component to work, you will need an instance of [ankerctl](https://gith
 running and working. Please refer to the ankerctl documentation for installation instructions.
 
 <b>Alternatively you can try my fork of the ankerctl addon
-here: https://github.com/sondregronas/ankermgmt-hassio-addons</b> - which includes a lot of changes from exsting pull
+here: https://github.com/sondregronas/ankermgmt-hassio-addons</b> - which includes a lot of changes from existing pull
 requests. I recommend you create an automation to restart the addon every 2 hours to avoid socket issues.
 
 [![Open your Home Assistant instance and show the add add-on repository dialog with a specific repository URL pre-filled.](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fsondregronas%2Fankermgmt-hassio-addons)

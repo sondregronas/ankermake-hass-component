@@ -71,12 +71,16 @@ class CommandTypes(Enum):
     UNKNOWN_1084 = 1084  # Not used
     TEMP_IS_LEVELED = 1072  # isLeveled: 1
     TEMP_ERROR_CODE = 1085  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '{"curFilamentType":["PLA"]}'}
-    UNKNOWN_ERROR_CODE = 1086  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '', 'commandType': 1086} - same as above?
+    UNKNOWN_ERROR_CODE = (
+        1086  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '', 'commandType': 1086} - same as above?
+    )
     TEMP_NOZZLE_TYPE = 1093  # value: 0, nozzle_type: 0
     UNKNOWN_1096 = 1096  # ({'commandType': 1096, 'value': 0}) (Missing context: https://github.com/sondregronas/ankermake-hass-component/issues/16)
     UNKNOWN_1097 = 1097  # {'commandType': 1097, 'value': 0} (Missing context: https://github.com/sondregronas/ankermake-hass-component/issues/16)
     # TODO: Implement "FILAMENT_TYPE"
-    FILAMENT_TYPE = 1098  # Anker slicer exclusive? ({'commandType': 1098, 'filamentType': ['"AnkerMake PLA+ Basic"\n']})
+    FILAMENT_TYPE = (
+        1098  # Anker slicer exclusive? ({'commandType': 1098, 'filamentType': ['"AnkerMake PLA+ Basic"\n']})
+    )
     ZZ_STEST_CMD_GCODE_TRANSPORT = 2018  # Not used
     ZZ_MQTT_CMD_ALEXA_MSG = 3000  # Not used
 
