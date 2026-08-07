@@ -71,6 +71,7 @@ class CommandTypes(Enum):
     UNKNOWN_1084 = 1084  # Not used
     TEMP_IS_LEVELED = 1072  # isLeveled: 1
     TEMP_ERROR_CODE = 1085  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '{"curFilamentType":["PLA"]}'}
+    UNKNOWN_ERROR_CODE = 1086  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '', 'commandType': 1086} - same as above?
     TEMP_NOZZLE_TYPE = 1093  # value: 0, nozzle_type: 0
     UNKNOWN_1096 = 1096  # ({'commandType': 1096, 'value': 0}) (Missing context: https://github.com/sondregronas/ankermake-hass-component/issues/16)
     UNKNOWN_1097 = 1097  # {'commandType': 1097, 'value': 0} (Missing context: https://github.com/sondregronas/ankermake-hass-component/issues/16)
@@ -78,6 +79,18 @@ class CommandTypes(Enum):
     FILAMENT_TYPE = 1098  # Anker slicer exclusive? ({'commandType': 1098, 'filamentType': ['"AnkerMake PLA+ Basic"\n']})
     ZZ_STEST_CMD_GCODE_TRANSPORT = 2018  # Not used
     ZZ_MQTT_CMD_ALEXA_MSG = 3000  # Not used
+
+
+# Command 1000 values
+# TODO: Incomplete, a lot of these are just best guesses
+class NotifyEventTypes(Enum):
+    PRINTER_READY = 0  # When you confirm a finished print / ready for work
+    PRINT_ACTIVE = 1  # Homing / Printing
+    PRINT_PAUSED = 2
+    PRINT_FINISHED = 4  # Triggered when the printer makes the finished sound
+    FAILED_TO_START = 5  # Happened during "Failed to transfer gcode"
+    ERROR_EXT_INFO = 6  # Best guess, same "ext" as error messages
+    PRINT_HEATING = 8  # Does not get sent during the heating part of the homing stage
 
 
 class FilamentType(Enum):

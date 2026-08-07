@@ -14,6 +14,7 @@ from logging import getLogger
 
 from .anker_models import (
     CommandTypes,
+    NotifyEventTypes,
     FilamentType,
     FILAMENT_WEIGHT_175,
     FILAMENT_DENSITY,
@@ -44,6 +45,7 @@ class AnkerData:
     _old_status: AnkerStatus = None
 
     _job_active: bool = False
+    _print_finished: bool = False
     job_name: str = ""
     image: str = ""
 
@@ -51,7 +53,6 @@ class AnkerData:
 
     error_message: str = ""
     error_level: str = ""
-    error_ext: str = ""
 
     progress: float = 0
     elapsed_time: int = 0
@@ -105,8 +106,8 @@ class AnkerData:
             # Skip keys ending with _temp unless the new state is OFFLINE (to avoid clearing target temps mid-print)
             and not (key.endswith("_temp") and self._status != AnkerStatus.OFFLINE)
         ]
-        # No further updates arrive once offline, so clear this explicitly
         self._job_active = False
+        self._print_finished = False
 
     def _pulse(self):
         """Pulse the printer's heartbeat. (Used to determine if the printer is online)"""
@@ -119,11 +120,6 @@ class AnkerData:
         return self._last_heartbeat > datetime.now(tz=self._timezone) - timedelta(
             seconds=30
         )
-
-    @property
-    def printing(self) -> bool:
-        """Returns True if the printer is actively advancing through a print job."""
-        return 0 < self.progress < 100
 
     @property
     def filament_weight(self) -> float:
@@ -149,11 +145,11 @@ class AnkerData:
 
     def _new_status_handler(self, new_status: AnkerStatus) -> AnkerStatus:
         """Handler for new status changes."""
-        status = new_status
+        self._status = new_status
 
         # If the status is the same as the old status, return the same status
-        if status == self._old_status:
-            return status
+        if self._status == self._old_status:
+            return self._status
 
         self._update_target_time()
 
@@ -162,11 +158,11 @@ class AnkerData:
             self._remove_error()
 
         # Reset all data if the status is one of the reset states
-        if status in RESET_STATES:
+        if self._status in RESET_STATES:
             self._reset()
 
-        self._old_status = status
-        return status
+        self._old_status = self._status
+        return self._status
 
     @property
     def is_heating_hotend(self, threshold: float = 3) -> bool:
@@ -204,10 +200,10 @@ class AnkerData:
             status = AnkerStatus.PAUSED
         elif is_changing_filament:
             status = AnkerStatus.CHANGING_FILAMENT
-        elif self.printing:
-            status = AnkerStatus.PRINTING
-        elif self.progress == 100:
+        elif self.progress and self._print_finished:
             status = AnkerStatus.FINISHED
+        elif self.progress:
+            status = AnkerStatus.PRINTING
         elif (
             not self.progress and self._old_status == AnkerStatus.HOMING and is_heating
         ):
@@ -248,6 +244,7 @@ class AnkerData:
     def _new_print_job(self):
         """Things to do when a new print job is registered"""
         self._remove_error()
+        self._print_finished = False
         self.print_start_time = datetime.now(tz=self._timezone) - timedelta(
             seconds=self.elapsed_time
         )
@@ -297,6 +294,27 @@ class AnkerData:
         if command_type not in [1000, 1001, 1003, 1004, 1006, 1081, 1084]:
             _LOGGER.debug(f"Received message: {wm}")
         match command_type:
+            case CommandTypes.ZZ_MQTT_CMD_EVENT_NOTIFY.value:
+                _LOGGER.debug(f"Received event: {wm}, current state {self._status}")
+                notify_event = wm.get("value")
+                match notify_event:
+                    # If we hit "Finished" on the printer, assume it is ready for a new job
+                    case NotifyEventTypes.PRINTER_READY.value:
+                        # Reset state to idle only if we are finished
+                        if self._print_finished:
+                            self._reset()
+                    case NotifyEventTypes.PRINT_FINISHED.value:
+                        self._print_finished = True
+                    case NotifyEventTypes.PRINT_ACTIVE.value:
+                        # "Filament Broken" error is fixed if present
+                        if self.error_message == ERROR_CODES.get("0xFF01030001"):
+                            self._remove_error()
+                    case NotifyEventTypes.PRINT_PAUSED.value:
+                        self.paused = True
+
+                if notify_event != NotifyEventTypes.PRINT_PAUSED.value:
+                    self.paused = False
+
             # Print schedule is broadcast at fixed intervals (every 5 seconds or so)
             # Not to be confused with print started (unused) that contains mostly the same data
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
@@ -377,13 +395,6 @@ class AnkerData:
             # Print speed gets broadcast sporadically?, stays the same even when paused
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SPEED.value:
                 self.current_speed = wm.get("value")
-
-            # A _message_ gets sent when the printer is paused, but it doesn't contain any relevant data
-            # No idea if this can be sent in other situations as well
-            case CommandTypes.ZZ_MQTT_CMD_PRINT_CONTROL.value:
-                self.paused = (
-                    not self.paused
-                )  # Toggle the paused state (No relevant data in the message :/)
 
             # Max print speed gets broadcast sporadically?
             case CommandTypes.TEMP_MAX_PRINT_SPEED.value:
