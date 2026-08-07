@@ -64,13 +64,19 @@ class CommandTypes(Enum):
     ZZ_MQTT_CMD_AI_INFO_CHECK = 1051  # Not used
     ZZ_MQTT_CMD_MODEL_LAYER = 1052
     TEMP_MAX_PRINT_SPEED = 1055  # max_print_speed: 500
+    # TODO: Figure out this one
+    UNKNOWN_BUTTON_CLICKS_1067 = 1067  # M5c exclusive? ({'commandType': 1067, 'data': {'idle': {'signal_click': 1, 'double_click': 4, 'long_press': 6}, 'busy': {'signal_click': 3, 'double_click': 0, 'long_press': 2}}})
     TEMP_PRINT_STOPPED = 1068  # {'name': 'name', 'img': 'url', 'totalTime': 0, 'filamentUsed': 0, 'filamentUnit': 'mm', 'saveTime': 0, 'trigger': 2})
     UNKNOWN_1081 = 1081  # Not used
     UNKNOWN_1084 = 1084  # Not used
     TEMP_IS_LEVELED = 1072  # isLeveled: 1
     TEMP_ERROR_CODE = 1085  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '{"curFilamentType":["PLA"]}'}
     TEMP_NOZZLE_TYPE = 1093  # value: 0, nozzle_type: 0
-    ZZ_STEST_CMD_GCODE_TRANSPOR = 2018  # Not used
+    UNKNOWN_1096 = 1096  # ({'commandType': 1096, 'value': 0}) (Missing context: https://github.com/sondregronas/ankermake-hass-component/issues/16)
+    UNKNOWN_1097 = 1097  # {'commandType': 1097, 'value': 0} (Missing context: https://github.com/sondregronas/ankermake-hass-component/issues/16)
+    # TODO: Implement "FILAMENT_TYPE"
+    FILAMENT_TYPE = 1098  # Anker slicer exclusive? ({'commandType': 1098, 'filamentType': ['"AnkerMake PLA+ Basic"\n']})
+    ZZ_STEST_CMD_GCODE_TRANSPORT = 2018  # Not used
     ZZ_MQTT_CMD_ALEXA_MSG = 3000  # Not used
 
 
