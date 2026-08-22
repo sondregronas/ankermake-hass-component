@@ -10,16 +10,12 @@ from . import AnkerMakeBaseEntity
 from .const import DOMAIN, MANUFACTURER
 from .sensor_manifest import Description
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class AnkerMakeImageSensor(AnkerMakeBaseEntity, ImageEntity):
     def __init__(self, coordinator, description, dev_info, hass: HomeAssistant):
         super().__init__(coordinator, description, dev_info)
         self._gcode_preview_url = ""
-        self._placeholder_path = hass.config.path(
-            "./custom_components/ankermake/assets/placeholder_gcode.png"
-        )
+        self._placeholder_path = hass.config.path("./custom_components/ankermake/assets/placeholder_gcode.png")
         ImageEntity.__init__(self, hass=hass)
         self._attr_image_last_updated = datetime.now()
 
@@ -42,9 +38,7 @@ class AnkerMakeImageSensor(AnkerMakeBaseEntity, ImageEntity):
     async def async_image(self) -> bytes | None:
         """Return image bytes."""
         if not self._gcode_preview_url:
-            return await self.hass.async_add_executor_job(
-                lambda: open(self._placeholder_path, "rb").read()
-            )
+            return await self.hass.async_add_executor_job(lambda: open(self._placeholder_path, "rb").read())
         async with aiohttp.ClientSession() as session:
             async with session.get(self._gcode_preview_url) as response:
                 return await response.read()

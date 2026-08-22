@@ -10,10 +10,12 @@ class AnkerUnhandledCommandException(AnkerException): ...
 class AnkerStatus(Enum):
     IDLE = "Idle"
     PRINTING = "Printing"
+    CHANGING_FILAMENT = "Changing Filament"
     PAUSED = "Paused"
     ERROR = "Error"
     OFFLINE = "Offline"
     PREHEATING = "Preheating"
+    HOMING = "Homing"
     FINISHED = "Finished"
 
 
@@ -62,14 +64,37 @@ class CommandTypes(Enum):
     ZZ_MQTT_CMD_AI_INFO_CHECK = 1051  # Not used
     ZZ_MQTT_CMD_MODEL_LAYER = 1052
     TEMP_MAX_PRINT_SPEED = 1055  # max_print_speed: 500
+    # TODO: Figure out this one
+    UNKNOWN_BUTTON_CLICKS_1067 = 1067  # M5c exclusive? ({'commandType': 1067, 'data': {'idle': {'signal_click': 1, 'double_click': 4, 'long_press': 6}, 'busy': {'signal_click': 3, 'double_click': 0, 'long_press': 2}}})
     TEMP_PRINT_STOPPED = 1068  # {'name': 'name', 'img': 'url', 'totalTime': 0, 'filamentUsed': 0, 'filamentUnit': 'mm', 'saveTime': 0, 'trigger': 2})
     UNKNOWN_1081 = 1081  # Not used
     UNKNOWN_1084 = 1084  # Not used
     TEMP_IS_LEVELED = 1072  # isLeveled: 1
     TEMP_ERROR_CODE = 1085  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '{"curFilamentType":["PLA"]}'}
+    UNKNOWN_ERROR_CODE = (
+        1086  # {'errorCode': '0xFF01030001', 'errorLevel': 'P1', 'ext': '', 'commandType': 1086} - same as above?
+    )
     TEMP_NOZZLE_TYPE = 1093  # value: 0, nozzle_type: 0
-    ZZ_STEST_CMD_GCODE_TRANSPOR = 2018  # Not used
+    UNKNOWN_1096 = 1096  # ({'commandType': 1096, 'value': 0}) (Missing context: https://github.com/sondregronas/ankermake-hass-component/issues/16)
+    UNKNOWN_1097 = 1097  # {'commandType': 1097, 'value': 0} (Missing context: https://github.com/sondregronas/ankermake-hass-component/issues/16)
+    # TODO: Implement "FILAMENT_TYPE"
+    FILAMENT_TYPE = (
+        1098  # Anker slicer exclusive? ({'commandType': 1098, 'filamentType': ['"AnkerMake PLA+ Basic"\n']})
+    )
+    ZZ_STEST_CMD_GCODE_TRANSPORT = 2018  # Not used
     ZZ_MQTT_CMD_ALEXA_MSG = 3000  # Not used
+
+
+# Command 1000 values
+# TODO: Incomplete, a lot of these are just best guesses
+class NotifyEventTypes(Enum):
+    PRINTER_READY = 0  # When you confirm a finished print / ready for work
+    PRINT_ACTIVE = 1  # Homing / Printing
+    PRINT_PAUSED = 2
+    PRINT_FINISHED = 4  # Triggered when the printer makes the finished sound
+    FAILED_TO_START = 5  # Happened during "Failed to transfer gcode"
+    ERROR_EXT_INFO = 6  # Best guess, same "ext" as error messages
+    PRINT_HEATING = 8  # Does not get sent during the heating part of the homing stage
 
 
 class FilamentType(Enum):

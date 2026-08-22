@@ -39,23 +39,21 @@ PLATFORMS = [
     Platform.BUTTON,
 ]
 
-_LOGGER = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up integration."""
     if DOMAIN in hass.data:
-        _LOGGER.info(
-            "Please delete ankermake from your configuration.yaml as it needs to be configured via the UI."
-        )
+        log.info("Please delete ankermake from your configuration.yaml as it needs to be configured via the UI.")
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up ankermake as config entry."""
 
-    _LOGGER.info(STARTUP)
-    _LOGGER.debug("Setting up entry %s: %s", entry.entry_id, entry.data)
+    log.info(STARTUP)
+    log.debug("Setting up entry %s: %s", entry.entry_id, entry.data)
 
     tz = await hass.async_add_executor_job(pytz.timezone, hass.config.time_zone)
     coordinator = AnkerMakeUpdateCoordinator(
@@ -75,12 +73,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
-    def __init__(
-        self, hass: HomeAssistant, entry: ConfigEntry, tz: datetime.tzinfo = None
-    ):
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry, tz: datetime.tzinfo = None):
         super().__init__(
             hass,
-            _LOGGER,
+            log,
             name=DOMAIN,
             update_interval=timedelta(seconds=UPDATE_FREQUENCY_SECONDS),
         )
@@ -98,9 +94,7 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
             except Exception:
                 # Catch everything: an unexpected/missing field in one message must not
                 # tear down the websocket loop (which would make the printer look offline)
-                _LOGGER.exception(
-                    f"[AnkerMake] Error updating data (Received message: {message})"
-                )
+                log.error(f"[AnkerMake] Error updating data (Received message: {message})")
 
         session = aiohttp.ClientSession()
         try:
@@ -113,7 +107,7 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
                     elif msg.type == aiohttp.WSMsgType.ERROR:
                         break
         except Exception as e:
-            _LOGGER.warning(f"[AnkerMake] Error connecting to WS: {e}")
+            log.debug(f"[AnkerMake] Error connecting to WS: {e}")
         finally:
             await session.close()
 
@@ -121,7 +115,7 @@ class AnkerMakeUpdateCoordinator(DataUpdateCoordinator[None]):
         try:
             self.ankerdata._api_status = await get_api_status(self.config["host"])
         except AnkerException as e:
-            _LOGGER.debug(f"[AnkerMake] Error updating API data: {e}")
+            log.debug(f"[AnkerMake] Error updating API data: {e}")
         # Ensure task is still running
         if self._listen_to_ws_task.done():
             self._listen_to_ws_task = asyncio.create_task(self._listen_to_ws())

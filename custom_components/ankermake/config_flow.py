@@ -32,33 +32,25 @@ class AnkerMakeFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id="user",
                 data_schema=VOL_SCHEME,
-                description_placeholders={
-                    "ankerctl_url": "https://github.com/Ankermgmt/ankermake-m5-protocol"
-                },
+                description_placeholders={"ankerctl_url": "https://github.com/Ankermgmt/ankermake-m5-protocol"},
             )
 
         def retry_input(msg):
             vol_scheme = vol.Schema(
                 {
                     vol.Required("host", default=user_input["host"]): vol.Coerce(str),
-                    vol.Required(
-                        "printer_name", default=user_input["printer_name"]
-                    ): vol.Coerce(str),
+                    vol.Required("printer_name", default=user_input["printer_name"]): vol.Coerce(str),
                 }
             )
             return self.async_show_form(
                 step_id="user",
                 data_schema=vol_scheme,
                 errors={"base": msg},
-                description_placeholders={
-                    "ankerctl_url": "https://github.com/Ankermgmt/ankermake-m5-protocol"
-                },
+                description_placeholders={"ankerctl_url": "https://github.com/Ankermgmt/ankermake-m5-protocol"},
             )
 
         # Replace http(s) with ws(s)
-        host = (
-            user_input["host"].replace("http://", "ws://").replace("https://", "wss://")
-        )
+        host = user_input["host"].replace("http://", "ws://").replace("https://", "wss://")
         # Ensure the host is in the correct format (ws:// or wss://)
         if not re.match(r"wss?://.+(:\d+)?", host):
             host = f"ws://{host}"
@@ -69,9 +61,7 @@ class AnkerMakeFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         user_input["host"] = host
 
         # Ensure the host is reachable
-        http_host = (
-            user_input["host"].replace("ws://", "http://").replace("wss://", "https://")
-        )
+        http_host = user_input["host"].replace("ws://", "http://").replace("wss://", "https://")
         url = f"{http_host}/api/version"
         try:
             async with aiohttp.ClientSession() as session:
@@ -90,6 +80,4 @@ class AnkerMakeFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         except Exception:
             return retry_input("A printer with this name is already configured.")
 
-        return self.async_create_entry(
-            title=user_input["printer_name"], data=user_input
-        )
+        return self.async_create_entry(title=user_input["printer_name"], data=user_input)

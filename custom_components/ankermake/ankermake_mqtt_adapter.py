@@ -7,12 +7,14 @@ In other words, this module is the "brain" of the AnkerMake integration.
 
 import os
 import re
+import math
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from logging import getLogger
 
 from .anker_models import (
     CommandTypes,
+    NotifyEventTypes,
     FilamentType,
     FILAMENT_WEIGHT_175,
     FILAMENT_DENSITY,
@@ -22,11 +24,15 @@ from .anker_models import (
     ERROR_CODES,
 )
 
-_LOGGER = getLogger(__name__)
+log = getLogger(__name__)
 if os.environ.get("ANKERMAKE_DEBUG", False):
-    _LOGGER.setLevel("DEBUG")
+    log.setLevel("DEBUG")
 
-RESET_STATES = [AnkerStatus.OFFLINE, AnkerStatus.IDLE]
+RESET_STATES = [
+    AnkerStatus.OFFLINE,
+    AnkerStatus.IDLE,
+    AnkerStatus.CHANGING_FILAMENT,
+]
 
 
 @dataclass
@@ -37,7 +43,9 @@ class AnkerData:
     _last_heartbeat: datetime = None
     _status: AnkerStatus = AnkerStatus.OFFLINE
     _old_status: AnkerStatus = None
-    _old_job_name: str = ""
+
+    _job_active: bool = False
+    _print_finished: bool = False
     job_name: str = ""
     image: str = ""
 
@@ -45,7 +53,6 @@ class AnkerData:
 
     error_message: str = ""
     error_level: str = ""
-    error_ext: str = ""
 
     progress: float = 0
     elapsed_time: int = 0
@@ -54,9 +61,7 @@ class AnkerData:
 
     fan_speed: int = 0
 
-    nozzle_type: str = NOZZLE_TYPES.get(
-        "0"
-    )  # TODO: Figure out what nozzle_types are available
+    nozzle_type: str = NOZZLE_TYPES.get("0")  # TODO: Figure out what nozzle_types are available
     bed_leveled: bool = True
 
     print_start_time: datetime = None
@@ -96,7 +101,11 @@ class AnkerData:
             setattr(self, key, getattr(self.__class__, key))
             for key, value in self.__dict__.items()
             if not key.startswith("_")
+            # Skip keys ending with _temp unless the new state is OFFLINE (to avoid clearing target temps mid-print)
+            and not (key.endswith("_temp") and self._status != AnkerStatus.OFFLINE)
         ]
+        self._job_active = False
+        self._print_finished = False
 
     def _pulse(self):
         """Pulse the printer's heartbeat. (Used to determine if the printer is online)"""
@@ -106,25 +115,14 @@ class AnkerData:
     def online(self) -> bool:
         """Returns True if the printer is online."""
         # TODO: Make this less taxing on the system (checks n(entities) times per update cycle)
-        return self._last_heartbeat > datetime.now(tz=self._timezone) - timedelta(
-            seconds=30
-        )
-
-    @property
-    def printing(self) -> bool:
-        """Returns True if the printer is currently printing."""
-        return self.job_name != "" or self.progress
+        return self._last_heartbeat > datetime.now(tz=self._timezone) - timedelta(seconds=30)
 
     @property
     def filament_weight(self) -> float:
         """Returns the weight of the filament used in grams."""
         # PLA is the default filament type (if the filament type is unknown)
         weight = (
-            float(
-                FILAMENT_WEIGHT_175.get(
-                    self.filament, FILAMENT_WEIGHT_175.get(FilamentType.PLA.value)
-                )
-            )
+            float(FILAMENT_WEIGHT_175.get(self.filament, FILAMENT_WEIGHT_175.get(FilamentType.PLA.value)))
             * self.filament_used
         )
         return round(weight, 2)
@@ -139,41 +137,46 @@ class AnkerData:
 
     def _new_status_handler(self, new_status: AnkerStatus) -> AnkerStatus:
         """Handler for new status changes."""
-        status = new_status
+        self._status = new_status
 
-        # If the status is the same as the old status, return
-        if status == self._old_status:
-            return status
+        # If the status is the same as the old status, return the same status
+        if self._status == self._old_status:
+            return self._status
 
         self._update_target_time()
 
-        # Reset the error message if the status is no longer an error
+        # Reset the error message if we are moving from an errored state
         if self._old_status == AnkerStatus.ERROR:
             self._remove_error()
 
-        # If the printer is finished/idle and the new status is printing, it should be preheating first
-        # (it takes a while for the printer to send the preheating status on a new print job)
-        if (
-            self._old_status in [AnkerStatus.FINISHED, AnkerStatus.IDLE]
-            and status == AnkerStatus.PRINTING
-        ):
-            status = AnkerStatus.PREHEATING
-
-        # Reset the data if the status is one of the reset states
-        if status in RESET_STATES:
+        # Reset all data if the status is one of the reset states
+        if self._status in RESET_STATES:
             self._reset()
 
-        self._old_status = status
-        return status
+        self._old_status = self._status
+        return self._status
+
+    @property
+    def is_heating_hotend(self, threshold: float = 3) -> bool:
+        """Returns True if the hotend is actively heating."""
+        return self.target_hotend_temp and abs(self.target_hotend_temp - self.hotend_temp) > threshold
+
+    @property
+    def is_heating_bed(self, threshold: float = 2) -> bool:
+        """Returns True if the bed is actively heating."""
+        return self.target_bed_temp and abs(self.target_bed_temp - self.bed_temp) > threshold
 
     @property
     def status(self) -> str:
         """Returns the current state of the printer."""
-        status = AnkerStatus.PRINTING
+        is_heating = self.is_heating_hotend or self.is_heating_bed
+        # We can detect filament changing when hotend is heating and the bed temperature target is nil
+        is_changing_filament = self.target_hotend_temp and not self.target_bed_temp
 
-        # Check if the printer is heating up
-        is_heating_hotend = self.target_hotend_temp - 5 > self.hotend_temp > 30
-        is_heating_bed = self.target_bed_temp - 2 > self.bed_temp > 30
+        # Targets are only set by the printer once a job is heating up, so reaching
+        # them (without printing yet) means we're in the homing step
+        targets_set = self.target_hotend_temp > 0 and self.target_bed_temp > 0
+        reached_targets = targets_set and not is_heating
 
         if not self.online:
             status = AnkerStatus.OFFLINE
@@ -181,11 +184,20 @@ class AnkerData:
             status = AnkerStatus.ERROR
         elif self.paused:
             status = AnkerStatus.PAUSED
-        elif not self.progress and (is_heating_hotend or is_heating_bed):
-            status = AnkerStatus.PREHEATING
-        elif self.progress == 100:
+        elif is_changing_filament:
+            status = AnkerStatus.CHANGING_FILAMENT
+        elif self.progress and self._print_finished:
             status = AnkerStatus.FINISHED
-        elif not self.printing:
+        elif self.progress:
+            status = AnkerStatus.PRINTING
+        elif not self.progress and self._old_status == AnkerStatus.HOMING and is_heating:
+            # Target temp can bump up mid-homing; don't fall back to preheating
+            status = AnkerStatus.HOMING
+        elif not self.progress and is_heating:
+            status = AnkerStatus.PREHEATING
+        elif not self.progress and reached_targets:
+            status = AnkerStatus.HOMING
+        else:
             status = AnkerStatus.IDLE
 
         return self._new_status_handler(status).value
@@ -193,39 +205,27 @@ class AnkerData:
     def _update_target_time(self):
         """Should not call this too often (on state change / new print job)"""
         if self.remaining_time:
-            self.print_target_time = datetime.now(tz=self._timezone) + timedelta(
-                seconds=self.remaining_time
-            )
+            self.print_target_time = datetime.now(tz=self._timezone) + timedelta(seconds=self.remaining_time)
 
     def _update_filament(self):
         """Should not call this too often (new print job)"""
         # Get Filament from filename (assume it is the last filament mentioned in the filename)
         matches = re.findall(FilamentType.options_regex(), self.job_name, re.IGNORECASE)
         # Make sure the last match is a lone word (e.g. "PLA" and not "PLANET")
-        while matches and not re.search(
-            rf"(?:\b|_){matches[-1]}(?:\b|_)", self.job_name, re.IGNORECASE
-        ):
+        while matches and not re.search(rf"(?:\b|_){matches[-1]}(?:\b|_)", self.job_name, re.IGNORECASE):
             matches.pop()
         if matches:
-            self.filament = FilamentType.upper_dict().get(
-                matches[-1].upper(), FilamentType.UNKNOWN.value
-            )
+            self.filament = FilamentType.upper_dict().get(matches[-1].upper(), FilamentType.UNKNOWN.value)
         else:
             self.filament = FilamentType.UNKNOWN.value
 
     def _new_print_job(self):
-        """Things to do when a new print job is registered (when the job_name changes)"""
+        """Things to do when a new print job is registered"""
         self._remove_error()
-        self.print_start_time = datetime.now(tz=self._timezone) - timedelta(
-            seconds=self.elapsed_time
-        )
+        self._print_finished = False
+        self.print_start_time = datetime.now(tz=self._timezone) - timedelta(seconds=self.elapsed_time)
         self._update_target_time()
         self._update_filament()
-
-    def _new_job_handler(self):
-        """Handler for new print jobs"""
-        if self.job_name != self._old_job_name:
-            self._new_print_job()
 
     @property
     def in_error_state(self) -> bool:
@@ -239,135 +239,141 @@ class AnkerData:
 
     @property
     def api_service_possible_states(self) -> list:
-        return list(self._api_status.get("possible_states", {}).keys()) + [
-            "Unavailable"
-        ]
+        return list(self._api_status.get("possible_states", {}).keys()) + ["Unavailable"]
 
     def get_api_version_value(self, key: str) -> str:
         return self._api_status.get("version", {}).get(key, "Unavailable")
 
     def get_api_service_status(self, service: str) -> str:
-        return (
-            self._api_status.get("services", {})
-            .get(service, {})
-            .get("state", "Unavailable")
-        )
+        return self._api_status.get("services", {}).get(service, {}).get("state", "Unavailable")
 
     def get_api_service_online(self, service: str) -> bool:
-        return (
-            self._api_status.get("services", {}).get(service, {}).get("online", False)
-        )
+        return self._api_status.get("services", {}).get(service, {}).get("online", False)
 
     def update(self, websocket_message: dict):
         """Update the AnkerData object with a new message from the AnkerMake printer."""
-        command_type = websocket_message.get("commandType")
+        wm = websocket_message
+        command_type = wm.get("commandType")
 
-        # Any message at all means the printer is talking to us, so pulse before parsing.
-        # (Parsing a single malformed field must not be able to make the printer look offline.)
+        # Update heartbeat
         self._pulse()
 
         # Debug logging for all messages except those that spam
         if command_type not in [1000, 1001, 1003, 1004, 1006, 1081, 1084]:
-            _LOGGER.debug(f"Received message: {websocket_message}")
+            log.debug(f"Received message: {wm}")
         match command_type:
+            case CommandTypes.ZZ_MQTT_CMD_EVENT_NOTIFY.value:
+                log.debug(f"Received event: {wm}, current state {self._status}")
+                notify_event = wm.get("value")
+                match notify_event:
+                    # If we hit "Finished" on the printer, assume it is ready for a new job
+                    case NotifyEventTypes.PRINTER_READY.value:
+                        # Reset state to idle only if we are finished
+                        if self._print_finished:
+                            self._reset()
+                        # Failed to transfer G-Code
+                        if self.error_message == ERROR_CODES.get("0xFF01030005"):
+                            self._remove_error()
+                    case NotifyEventTypes.PRINT_FINISHED.value:
+                        self._print_finished = True
+                    case NotifyEventTypes.PRINT_ACTIVE.value:
+                        # "Filament Broken" error is fixed if present
+                        if self.error_message in [
+                            ERROR_CODES.get("0xFF01030001"),
+                            ERROR_CODES.get(
+                                "0xFF01030005"  # Failsafe for g-code error
+                            ),
+                        ]:
+                            self._remove_error()
+                    case NotifyEventTypes.PRINT_PAUSED.value:
+                        self.paused = True
+
+                if notify_event != NotifyEventTypes.PRINT_PAUSED.value:
+                    self.paused = False
+
             # Print schedule is broadcast at fixed intervals (every 5 seconds or so)
             # Not to be confused with print started (unused) that contains mostly the same data
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SCHEDULE.value:
-                # Update the status
-                self.job_name = websocket_message.get("name") or ""
-                self.image = websocket_message.get("img")
+                new_job_name = wm.get("name", "")
+                job_active = bool(new_job_name)
+                _elapsed_time = int(wm.get("totalTime", 0))
+                _remaining_time = int(wm.get("time", 0))
+                # A reprint never toggles job_active false->true, so also treat a
+                # reset in elapsed time as a new job
+                new_job_started = job_active and (not self._job_active or _elapsed_time < self.elapsed_time)
+                self._job_active = job_active
+                self.job_name = new_job_name or self.job_name  # sticky
+                self.image = wm.get("img")
 
-                progress = websocket_message.get("progress", 0) / 100
-                self.progress = round(progress, 1)
+                progress = math.floor(wm.get("progress", 0)) / 100
+                # Only jump from 100->0 if a new job started
+                if new_job_started or not (progress == 0 and self.progress == 100):
+                    self.progress = progress
 
-                _elapsed_time = int(websocket_message.get("totalTime", 0))
-                _remaining_time = int(websocket_message.get("time", 0))
                 self.elapsed_time = _elapsed_time
                 self.remaining_time = _remaining_time
                 self.total_time = _elapsed_time + _remaining_time
 
                 # Not every firmware sends the AI fields, so keep the previous value when absent
-                if "aiFlag" in websocket_message or "AISwitch" in websocket_message:
-                    self.ai_enabled = (
-                        max(
-                            websocket_message.get("aiFlag", 0),
-                            websocket_message.get("AISwitch", 0),
-                        )
-                        == 1
+                self.ai_enabled = (
+                    max(
+                        wm.get("aiFlag", 0),
+                        wm.get("AISwitch", 0),
                     )
-                self.ai_level = websocket_message.get("AISensitivity", self.ai_level)
-                if "AIPausePrint" in websocket_message:
-                    self.ai_pause_print = websocket_message["AIPausePrint"] == 1
-                if "AIJoinImproving" in websocket_message:
-                    self.ai_data_collection = websocket_message["AIJoinImproving"] == 1
+                    == 1
+                )
+                self.ai_level = wm.get("AISensitivity", self.ai_level)
+                self.ai_pause_print = wm.get("AIPausePrint", self.ai_pause_print) == 1
+                self.ai_data_collection = wm.get("AIJoinImproving", self.ai_data_collection) == 1
 
-                filament_used = (
-                    websocket_message.get("filamentUsed", 0) / 1000
-                )  # Get meters (from mm)
+                filament_used = wm.get("filamentUsed", 0) / 1000  # Get meters (from mm)
                 self.filament_used = round(filament_used, 2)
 
                 # Register new print job (only on this event)
-                self._new_job_handler()
-                self._old_job_name = self.job_name
+                if new_job_started:
+                    self._new_print_job()
 
             # Model Layer is broadcast every layer change
             case CommandTypes.ZZ_MQTT_CMD_MODEL_LAYER.value:
-                self.current_layer = websocket_message.get("real_print_layer")
-                self.total_layers = websocket_message.get("total_layer")
+                self.current_layer = wm.get("real_print_layer")
+                self.total_layers = wm.get("total_layer")
 
             # Nozzle temp gets broadcast with fixed intervals (every 5 seconds or so)
             case CommandTypes.ZZ_MQTT_CMD_NOZZLE_TEMP.value:
-                # currentTemp/targetTemp are sent as deltas: keep the last known value when absent
-                if "currentTemp" in websocket_message:
-                    self.hotend_temp = round(websocket_message["currentTemp"] / 100, 1)
-                if "targetTemp" in websocket_message:
-                    self.target_hotend_temp = round(
-                        websocket_message["targetTemp"] / 100, 1
-                    )
+                self.hotend_temp = round(wm.get("currentTemp", self.hotend_temp * 100) / 100, 1)
+                self.target_hotend_temp = round(wm.get("targetTemp", self.target_hotend_temp * 100) / 100, 1)
 
-            # Fan speed gets broadcast.. when the fan speed changes?
+            # Fan speed gets broadcast... when the fan speed changes?
             case CommandTypes.ZZ_MQTT_CMD_FAN_SPEED.value:
-                self.fan_speed = websocket_message.get("value")
+                self.fan_speed = wm.get("value")
 
             # Motor lock gets broadcast presumably when the motor is locked/unlocked (on print start)
             case CommandTypes.ZZ_MQTT_CMD_MOTOR_LOCK.value:
-                self.motor_locked = websocket_message.get("lock") == 1
+                self.motor_locked = wm.get("lock") == 1
 
             # Hotbed temp gets broadcast with fixed intervals (every 5 seconds or so)
             case CommandTypes.ZZ_MQTT_CMD_HOTBED_TEMP.value:
-                # Divide by 100 to get the correct value; keep the last known value when absent
-                if "currentTemp" in websocket_message:
-                    self.bed_temp = round(websocket_message["currentTemp"] / 100, 1)
-                if "targetTemp" in websocket_message:
-                    self.target_bed_temp = round(
-                        websocket_message["targetTemp"] / 100, 1
-                    )
+                self.bed_temp = round(wm.get("currentTemp", self.bed_temp * 100) / 100, 1)
+                self.target_bed_temp = round(wm.get("targetTemp", self.target_bed_temp * 100) / 100, 1)
 
             # Print speed gets broadcast sporadically?, stays the same even when paused
             case CommandTypes.ZZ_MQTT_CMD_PRINT_SPEED.value:
-                self.current_speed = websocket_message.get("value")
-
-            # A _message_ gets sent when the printer is paused, but it doesn't contain any relevant data
-            # No idea if this can be sent in other situations as well
-            case CommandTypes.ZZ_MQTT_CMD_PRINT_CONTROL.value:
-                self.paused = (
-                    not self.paused
-                )  # Toggle the paused state (No relevant data in the message :/)
+                self.current_speed = wm.get("value")
 
             # Max print speed gets broadcast sporadically?
             case CommandTypes.TEMP_MAX_PRINT_SPEED.value:
-                self.max_speed = websocket_message.get("max_print_speed")
+                self.max_speed = wm.get("max_print_speed")
 
             # Nozzle type is broadcast shortly after a print job is _properly_ started
             case CommandTypes.TEMP_NOZZLE_TYPE.value:
                 self.nozzle_type = NOZZLE_TYPES.get(
-                    str(websocket_message.get("nozzle_type")),
-                    str(websocket_message.get("nozzle_type")),
+                    str(wm.get("nozzle_type")),
+                    str(wm.get("nozzle_type")),
                 )
 
             # Auto-leveling sends a message with isLeveled: 1 (and presumably isLeveled: 0 when it's not leveled)
             case CommandTypes.TEMP_IS_LEVELED.value:
-                self.bed_leveled = websocket_message.get("isLeveled") == 1
+                self.bed_leveled = wm.get("isLeveled") == 1
 
             # When the STOP button is pressed, this message is sent
             case CommandTypes.TEMP_PRINT_STOPPED.value:
@@ -376,22 +382,18 @@ class AnkerData:
 
             # Errors (?)
             case CommandTypes.TEMP_ERROR_CODE.value:
-                self.error_level = websocket_message.get("errorLevel")
+                self.error_level = wm.get("errorLevel")
                 self.error_message = ERROR_CODES.get(
-                    websocket_message.get("errorCode"),
-                    websocket_message.get("errorCode"),
+                    wm.get("errorCode"),
+                    wm.get("errorCode"),
                 )
                 if self.error_message not in ERROR_CODES.values():
-                    _LOGGER.error(
-                        f"Unknown error occured: {self.error_message}. Please open a github issue with a description of what you were doing when this error occurred, and please look in the AnkerMake app for a proper error message. Include this: (Received message: {websocket_message})"
+                    log.error(
+                        f"Unknown error occured: {self.error_message}. Please open a github issue with a description of what you were doing when this error occurred, and please look in the AnkerMake app for a proper error message. Include this: (Received message: {wm})"
                     )
 
             # If the command_type is not handled, raise an exception (unless we know it's not used)
             case _:
                 if command_type not in CommandTypes:
-                    _LOGGER.error(
-                        f"Unknown command_type: {command_type} ({websocket_message})"
-                    )
-                    raise AnkerUnhandledCommandException(
-                        f"Unknown command_type: {command_type} ({websocket_message})"
-                    )
+                    log.error(f"Unknown command_type: {command_type} ({wm})")
+                    raise AnkerUnhandledCommandException(f"Unknown command_type: {command_type} ({wm})")

@@ -14,8 +14,6 @@ from .ankerctl_util import AnkerUtilException, reload_ankerctl
 from .const import DOMAIN, MANUFACTURER
 from .sensor_manifest import Description
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class AnkerMakeButtonSensor(AnkerMakeBaseEntity, ButtonEntity):
     @callback

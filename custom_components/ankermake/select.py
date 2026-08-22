@@ -14,8 +14,6 @@ from .ankerctl_util import VideoQuality, set_video_quality, AnkerUtilException
 from .const import DOMAIN, MANUFACTURER
 from .sensor_manifest import Description
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class AnkerMakeSelectSensor(AnkerMakeBaseEntity, SelectEntity):
     _attr_options = list(VideoQuality.__members__.keys())
@@ -30,9 +28,7 @@ class AnkerMakeSelectSensor(AnkerMakeBaseEntity, SelectEntity):
 
     async def async_select_option(self, option: str) -> None:
         try:
-            await set_video_quality(
-                self.coordinator.config["host"], VideoQuality.__members__[option]
-            )
+            await set_video_quality(self.coordinator.config["host"], VideoQuality.__members__[option])
             self._attr_current_option = option
         except AnkerUtilException as e:
             raise ServiceValidationError(e)

@@ -15,8 +15,6 @@ from .ankerctl_util import turn_on_light, turn_off_light, AnkerUtilException
 from .const import DOMAIN, MANUFACTURER
 from .sensor_manifest import Description
 
-_LOGGER = logging.getLogger(__name__)
-
 
 class AnkerMakeLightSensor(AnkerMakeBaseEntity, LightEntity):
     _attr_supported_color_modes = {"onoff"}
