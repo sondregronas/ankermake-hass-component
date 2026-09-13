@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **Project isn't actively maintained**
+> 
+> For a more up to date integration see https://github.com/Django1982/ankermake-m5-protocol#home-assistant-integration
+
 # AnkerMake Home Assistant Component
 
 [![Validation](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/hassfest.yml/badge.svg)](https://github.com/sondregronas/ankermake-hass-component/actions/workflows/hassfest.yml)
